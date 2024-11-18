@@ -162,3 +162,4 @@ cython_debug/
 #.idea/
 models/FastSAM.pt
 models/FastSAM-x.pt
+models/XMem.pth
