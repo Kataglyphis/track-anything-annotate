@@ -81,6 +81,10 @@ class Segmenter:
         )
         return annotated_frame
 
+    @torch.no_grad()
+    def clear_memory(self):
+        torch.cuda.empty_cache()
+
 
 def visualize_unique_mask(unique_mask):
     # Создаем цветовую карту для визуализации уникальной маски

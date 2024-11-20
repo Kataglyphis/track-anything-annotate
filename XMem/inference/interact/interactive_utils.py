@@ -4,8 +4,8 @@ import numpy as np
 
 import torch
 import torch.nn.functional as F
-from util.palette import davis_palette
-from dataset.range_transform import im_normalization
+from XMem.util.palette import davis_palette
+from XMem.util.range_transform import im_normalization
 
 def image_to_torch(frame: np.ndarray, device='cuda'):
     # frame: H*W*3 numpy array
@@ -177,4 +177,3 @@ def overlay_layer_torch(image, prob, layer, target_object):
     im_overlay = im_overlay.astype(np.uint8)
 
     return im_overlay
-
