@@ -4,6 +4,7 @@ import torch
 from fastsam import FastSAM, FastSAMPrompt, FastSAMPredictor
 from fastsam.utils import convert_box_xywh_to_xyxy
 from config import DEVICE
+from tools.mask_display import visualize_unique_mask, visualize_wb_mask
 
 
 class Segmenter:
@@ -86,31 +87,6 @@ class Segmenter:
         torch.cuda.empty_cache()
 
 
-def visualize_unique_mask(unique_mask):
-    # Создаем цветовую карту для визуализации уникальной маски
-    unique_values = np.unique(unique_mask)
-    color_map = np.zeros((len(unique_values), 3), dtype=np.uint8)
-
-    # Генерация уникальных цветов для каждого уникального значения
-    for i, value in enumerate(unique_values):
-        if value == 0:  # Фон
-            color_map[i] = [0, 0, 0]  # Черный для фона
-        else:
-            color_map[i] = tuple(
-                np.random.randint(0, 255, size=3)
-            )  # Случайный цвет для объектов
-
-    # Создаем цветную визуализацию уникальной маски
-    colored_unique_mask = np.zeros(
-        (unique_mask.shape[0], unique_mask.shape[1], 3), dtype=np.uint8
-    )
-    for i in range(unique_mask.shape[0]):
-        for j in range(unique_mask.shape[1]):
-            colored_unique_mask[i, j] = color_map[unique_mask[i, j]]
-
-    return colored_unique_mask
-
-
 def get_coordinates(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDOWN:  # Если нажата левая кнопка мыши
         points = []
@@ -139,7 +115,7 @@ if __name__ == '__main__':
     # seg.get_mask_by_point_promt(points)
     mask, unique_mask = seg.convert_mask_to_color()
     print(np.unique(unique_mask))
-    mask = visualize_unique_mask(unique_mask)
+    mask = visualize_wb_mask(unique_mask)
     im = seg.annotated_frame()
     cv2.imshow('mask', mask)
     cv2.imshow('im', im)
