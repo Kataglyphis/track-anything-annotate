@@ -13,7 +13,9 @@ from XMem.inference.interact.interactive_utils import (
     torch_prob_to_numpy_mask,
     overlay_davis,
 )
-from segmenter import Segmenter, visualize_unique_mask
+from segmenter import Segmenter
+from tools.mask_display import visualize_unique_mask, visualize_wb_mask, mask_map
+from tools.contour_detector import getting_coordinates
 
 
 class TrackerCore:
@@ -63,7 +65,7 @@ if __name__ == '__main__':
     ret, frame = video.read()
     frame_cop = frame.copy()
     video.release()
-    bboxes = [(476, 166, 102, 154), (8, 252, 91, 149)]
+    bboxes = [(476, 166, 102, 154), (8, 252, 91, 149), (106, 335, 211, 90)]
     points = [[531, 230], [45, 321], [226, 360]]
     seg = Segmenter('models/FastSAM-x.pt')
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -72,6 +74,7 @@ if __name__ == '__main__':
     mask, unique_mask = seg.convert_mask_to_color()
     seg.clear_memory()
     masks = []
+    images = []
     traker = TrackerCore()
     frames_to_propagate = 200
     current_frame_index = 0
@@ -90,17 +93,24 @@ if __name__ == '__main__':
         if current_frame_index == 0:
             mask = traker.track(frame_v, unique_mask)
             masks.append(mask)
+            images.append(frame_v)
         else:
             mask = traker.track(frame_v)
             masks.append(mask)
+            images.append(frame_v)
 
         current_frame_index += 1
     video.release()
     print(len(masks))
-    im1 = visualize_unique_mask(masks[0])
-    im3 = visualize_unique_mask(masks[200])
-    cv2.imshow('mask', mask)
-    cv2.imshow('im', im1)
+    im3 = visualize_wb_mask(masks[200])
+    ima = images[200].copy()
+    for m in mask_map(masks[200]):
+        for box in getting_coordinates(m):
+            (x, y, w, h) = [v for v in box]
+            cv2.rectangle(ima, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    image_m = overlay_davis(images[200], masks[200])
+    cv2.imshow('image_m200', image_m)
+    cv2.imshow('ima_rect', ima)
     cv2.imshow('im2', im3)
     cv2.waitKey(0)
     cv2.destroyAllWindows()

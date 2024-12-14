@@ -5,6 +5,7 @@ from fastsam import FastSAM, FastSAMPrompt, FastSAMPredictor
 from fastsam.utils import convert_box_xywh_to_xyxy
 from config import DEVICE
 from tools.mask_display import visualize_unique_mask, visualize_wb_mask
+from tools.contour_detector import getting_coordinates
 
 
 class Segmenter:
@@ -100,7 +101,7 @@ if __name__ == '__main__':
     ret, frame = video.read()
     frame_cop = frame.copy()
     video.release()
-    bboxes = [(476, 166, 102, 154), (8, 252, 91, 149)]
+    bboxes = [(476, 166, 102, 154), (8, 252, 91, 149), (106, 335, 211, 90)]
     points = [[531, 230], [45, 321], [226, 360]]
     # cv2.namedWindow("Image")
     # cv2.setMouseCallback("Image", get_coordinates)
@@ -116,7 +117,11 @@ if __name__ == '__main__':
     mask, unique_mask = seg.convert_mask_to_color()
     print(np.unique(unique_mask))
     mask = visualize_wb_mask(unique_mask)
+    for box in getting_coordinates(mask):
+        (x, y, w, h) = [v for v in box]
+        cv2.rectangle(frame_cop, (x, y), (x + w, y + h), (0, 255, 0), 2)
     im = seg.annotated_frame()
+    cv2.imshow('frame', frame_cop)
     cv2.imshow('mask', mask)
     cv2.imshow('im', im)
     cv2.waitKey(0)
