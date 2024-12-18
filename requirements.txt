@@ -9,3 +9,4 @@ segment-anything-fast
 numpy
 opencv-python
 matplotlib
+tqdm
