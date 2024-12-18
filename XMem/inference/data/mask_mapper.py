@@ -36,6 +36,13 @@ class MaskMapper:
         # if coherent, no mapping is required
         self.coherent = True
 
+    def clear_lables(self):
+        self.labels = []
+        self.remappings = {}
+
+        # if coherent, no mapping is required
+        self.coherent = True
+
     def convert_mask(self, mask, exhaustive=False):
         # mask is in index representation, H*W numpy array
         labels = np.unique(mask).astype(np.uint8)
@@ -64,7 +71,6 @@ class MaskMapper:
 
         # mask num_objects*H*W
         return mask, new_mapped_labels
-
 
     def remap_index_mask(self, mask):
         # mask is in index representation, H*W numpy array
