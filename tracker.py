@@ -5,6 +5,8 @@ from tqdm import tqdm
 
 from segmenter import Segmenter
 from tracker_core import TrackerCore
+from tools.overlay_image import painter_borders
+from XMem.inference.interact.interactive_utils import overlay_davis
 
 
 def get_frames(video_path: str, frames_to_propagate: int = 0):
@@ -12,9 +14,10 @@ def get_frames(video_path: str, frames_to_propagate: int = 0):
     try:
         cap = cv2.VideoCapture(video_path)
         fps = cap.get(cv2.CAP_PROP_FPS)
+        count_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
         current_frame_index = 0
         if frames_to_propagate == 0:
-            frames_to_propagate = fps
+            frames_to_propagate = count_frames
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
@@ -25,7 +28,7 @@ def get_frames(video_path: str, frames_to_propagate: int = 0):
             current_frame_index += 1
     except (OSError, TypeError, ValueError, KeyError, SyntaxError) as e:
         print("read_frame_source:{} error. {}\n".format(video_path, str(e)))
-    return frames
+    return frames, fps
 
 
 class Tracking:
@@ -61,9 +64,22 @@ if __name__ == '__main__':
     path = 'video-test/video.mp4'
     video = cv2.VideoCapture(path)
     ret, frame = video.read()
+    frame_width = int(video.get(3))
+    frame_height = int(video.get(4))
+    frame_size = (frame_width, frame_height)
     video.release()
-    frames = get_frames(path, 200)
+    frames, fps = get_frames(path)
     tracking = Tracking()
     mask = tracking.select_object(frame)
     masks = tracking.tracking(frames, mask)
-    print(len(masks))
+    filename = 'output_video_from_file.mp4'
+    output = cv2.VideoWriter(filename, cv2.VideoWriter_fourcc(*'XVID'), fps, frame_size)
+    for frame, mask in zip(frames, masks):
+        f = painter_borders(frame, mask)
+        #f = overlay_davis(frame, mask)
+        output.write(f)
+    # Освобождаем ресурсы
+    output.release()
+    cv2.destroyAllWindows()
+
+    print(f'Видео записано в файл: {filename}')
