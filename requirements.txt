@@ -8,5 +8,5 @@ setuptools>=75
 segment-anything-fast
 numpy
 opencv-python
-matplotlib
+matplotlib==3.9.2
 tqdm
