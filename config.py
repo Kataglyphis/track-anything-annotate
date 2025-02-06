@@ -19,4 +19,5 @@ XMEM_CONFIG = {
     'max_mid_term_frames': 10,
     'max_long_term_elements': 1000,
     'size': 480,
+    'device': DEVICE,
 }
