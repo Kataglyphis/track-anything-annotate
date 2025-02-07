@@ -75,8 +75,8 @@ if __name__ == '__main__':
     filename = 'output_video_from_file.mp4'
     output = cv2.VideoWriter(filename, cv2.VideoWriter_fourcc(*'XVID'), fps, frame_size)
     for frame, mask in zip(frames, masks):
-        f = painter_borders(frame, mask)
-        #f = overlay_davis(frame, mask)
+        #f = painter_borders(frame, mask)
+        f = overlay_davis(frame, mask)
         output.write(f)
     # Освобождаем ресурсы
     output.release()

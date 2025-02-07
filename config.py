@@ -17,7 +17,7 @@ XMEM_CONFIG = {
     'num_prototypes': 128,
     'min_mid_term_frames': 5,
     'max_mid_term_frames': 10,
-    'max_long_term_elements': 1000,
+    'max_long_term_elements': 5000,
     'size': 480,
     'device': DEVICE,
 }
