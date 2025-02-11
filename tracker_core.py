@@ -14,7 +14,7 @@ from XMem.inference.interact.interactive_utils import (
     torch_prob_to_numpy_mask,
     overlay_davis,
 )
-from segmenter import Segmenter
+from segmenter_fast import Segmenter
 from tools.mask_display import visualize_unique_mask, visualize_wb_mask, mask_map
 from tools.contour_detector import getting_coordinates
 

@@ -3,7 +3,7 @@ import numpy as np
 import psutil
 from tqdm import tqdm
 
-from segmenter import Segmenter
+from segmenter_fast import Segmenter
 from tracker_core_test import TrackerCore
 from tools.overlay_image import painter_borders
 from XMem2.inference.interact.interactive_utils import overlay_davis

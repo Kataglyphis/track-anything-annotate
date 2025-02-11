@@ -11,7 +11,7 @@ from XMem2.util.range_transform import im_normalization
 from XMem2.inference.interact.interactive_utils import (
     overlay_davis,
 )
-from segmenter import Segmenter
+from segmenter_fast import Segmenter
 from tools.mask_display import visualize_wb_mask, mask_map
 from tools.contour_detector import getting_coordinates
 
