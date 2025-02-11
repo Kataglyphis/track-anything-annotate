@@ -4,15 +4,53 @@ import requests
 url = 'https://github.com/hkchengrex/XMem/releases/download/v1.0/XMem.pth'
 # Имя файла, под которым он будет сохранен
 file_name = 'models/XMem.pth'
+path = 'models/'
+# Базовые URL-адреса
+BASE_URL_PT = "https://dl.fbaipublicfiles.com/segment_anything_2/092824/"
+BASE_URL_YAML = (
+    "https://github.com/facebookresearch/sam2/tree/main/sam2/configs/sam2.1/"
+)
 
-# Выполняем запрос на скачивание
-response = requests.get(url)
+# Словарь для чекпоинтов (.pt)
+CHECKPOINTS_PT = {
+    f"{path}sam2.1_hiera_tiny.pt": f"{BASE_URL_PT}sam2.1_hiera_tiny.pt",
+    f"{path}sam2.1_hiera_small.pt": f"{BASE_URL_PT}sam2.1_hiera_small.pt",
+    f"{path}sam2.1_hiera_base_plus.pt": f"{BASE_URL_PT}sam2.1_hiera_base_plus.pt",
+    f"{path}sam2.1_hiera_large.pt": f"{BASE_URL_PT}sam2.1_hiera_large.pt",
+}
 
-# Проверяем, успешен ли запрос
-if response.status_code == 200:
-    # Открываем файл в бинарном режиме и записываем содержимое
-    with open(file_name, 'wb') as file:
-        file.write(response.content)
-    print(f"Файл '{file_name}' успешно скачан.")
-else:
-    print(f"Ошибка при скачивании файла: {response.status_code}")
+# Словарь для конфигурационных файлов (.yaml)
+CHECKPOINTS_YAML = {
+    f"{path}sam2.1_hiera_t.yaml": f"{BASE_URL_YAML}sam2.1_hiera_t.yaml",
+    f"{path}sam2.1_hiera_s.yaml": f"{BASE_URL_YAML}sam2.1_hiera_s.yaml",
+    f"{path}sam2.1_hiera_b+.yaml": f"{BASE_URL_YAML}sam2.1_hiera_b+.yaml",
+    f"{path}sam2.1_hiera_l.yaml": f"{BASE_URL_YAML}sam2.1_hiera_l.yaml",
+}
+
+def download_checkpoint(url, filename):
+    print(f"Downloading {filename}...")
+    try:
+        response = requests.get(url, stream=True)
+        response.raise_for_status()  # Проверка на ошибки HTTP
+
+        with open(filename, 'wb') as file:
+            for chunk in response.iter_content(chunk_size=8192):
+                file.write(chunk)
+
+        print(f"{filename} downloaded successfully.")
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to download {filename} from {url}. Error: {e}")
+        exit(1)
+
+
+if __name__ == "__main__":
+    download_checkpoint(url, file_name)
+    # Сначала скачиваем .pt файлы
+    for filename, url in CHECKPOINTS_PT.items():
+        download_checkpoint(url, filename)
+
+    # Затем скачиваем .yaml файлы
+    for filename, url in CHECKPOINTS_YAML.items():
+        download_checkpoint(url, filename)
+
+    print("All checkpoints and configuration files are downloaded successfully.")

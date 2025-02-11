@@ -10,3 +10,4 @@ numpy
 opencv-python
 matplotlib==3.9.2
 tqdm
+git+https://github.com/facebookresearch/segment-anything-2.git

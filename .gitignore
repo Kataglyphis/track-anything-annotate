@@ -163,3 +163,7 @@ cython_debug/
 models/FastSAM.pt
 models/FastSAM-x.pt
 models/XMem.pth
+models/sam2.1_hiera_base_plus.pt
+models/sam2.1_hiera_large.pt
+models/sam2.1_hiera_small.pt
+models/sam2.1_hiera_tiny.pt
