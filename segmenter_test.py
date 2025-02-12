@@ -4,15 +4,15 @@ import cv2
 import numpy as np
 from config import DEVICE
 
-sam2_checkpoint = 'sam2.1_hiera_large.pt'
-model_cfg = 'sam2.1_hiera_l.yaml'
+sam2_checkpoint = 'models/sam2_hiera_large.pt'
+model_cfg = 'sam2_hiera_l.yaml'
 
 build = build_sam2(model_cfg, sam2_checkpoint, device=DEVICE)
 
 sam = SAM2ImagePredictor(build)
 
 
-path = 'video.mp4'
+path = 'video-test/video.mp4'
 video = cv2.VideoCapture(path)
 ret, frame = video.read()
 frame_cop = frame.copy()

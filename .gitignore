@@ -167,3 +167,7 @@ models/sam2.1_hiera_base_plus.pt
 models/sam2.1_hiera_large.pt
 models/sam2.1_hiera_small.pt
 models/sam2.1_hiera_tiny.pt
+models/sam2_hiera_base_plus.pt
+models/sam2_hiera_large.pt
+models/sam2_hiera_small.pt
+models/sam2_hiera_tiny.pt
