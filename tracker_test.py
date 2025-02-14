@@ -3,7 +3,8 @@ import numpy as np
 import psutil
 from tqdm import tqdm
 
-from segmenter_fast import Segmenter
+from segmenter_test import Segmenter2
+from tools.mask_merge import merge_masks
 from tracker_core_test import TrackerCore
 from tools.overlay_image import painter_borders
 from XMem2.inference.interact.interactive_utils import overlay_davis
@@ -33,15 +34,22 @@ def get_frames(video_path: str, frames_to_propagate: int = 0):
 
 class Tracking:
     def __init__(self):
-        self.segmenter = Segmenter('models/FastSAM-x.pt')
+        self.segmenter = Segmenter2()
         self.trecker = TrackerCore()
 
     def select_object(self, frame: np.ndarray) -> np.ndarray:
         bboxes = [(476, 166, 102, 154), (8, 252, 91, 149), (106, 335, 211, 90)]
-        points = [[531, 230], [45, 321], [226, 360]]
-        self.segmenter.prompt = frame
-        self.segmenter.get_mask_by_box_prompt(bboxes)
-        mask, unique_mask = self.segmenter.convert_mask_to_color()
+        points = [[531, 230], [45, 321], [226, 360], [194, 313]]
+        self.segmenter.set_image(frame)
+        maskss = []
+        for point in points:
+            prompts = {
+                'point_coords': np.array([point]),
+                'point_labels': np.array([1]),
+            }
+            masks, scores, logits = self.segmenter.predict(prompts, 'point')
+            maskss.append(masks[np.argmax(scores)])
+        mask, unique_mask = merge_masks(maskss)
         return unique_mask
 
     def tracking(self, frames: list, template_mask: np.ndarray) -> list:
@@ -70,6 +78,9 @@ if __name__ == '__main__':
     video.release()
     frames, fps = get_frames(path)
     tracking = Tracking()
+    
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    
     mask = tracking.select_object(frame)
     masks = tracking.tracking(frames, mask)
     filename = 'output_video_from_file_mem2.mp4'

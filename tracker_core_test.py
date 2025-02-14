@@ -11,10 +11,10 @@ from XMem2.util.range_transform import im_normalization
 from XMem2.inference.interact.interactive_utils import (
     overlay_davis,
 )
-from segmenter_fast import Segmenter
+from segmenter_test import Segmenter2
 from tools.mask_display import visualize_wb_mask, mask_map
 from tools.contour_detector import getting_coordinates
-
+from tools.mask_merge import merge_masks
 
 class TrackerCore:
     def __init__(self, device: str = DEVICE):
@@ -67,14 +67,30 @@ if __name__ == '__main__':
     ret, frame = video.read()
     frame_cop = frame.copy()
     video.release()
+
     bboxes = [(476, 166, 102, 154), (8, 252, 91, 149), (106, 335, 211, 90)]
-    points = [[531, 230], [45, 321], [226, 360]]
-    seg = Segmenter('models/FastSAM-x.pt')
+    points = [[531, 230], [45, 321], [226, 360], [194, 313]]
+
+    mode = 'point'
+    prompts = {
+        'point_coords': np.array([[531, 230], [45, 321], [226, 360], [194, 313]]),
+        'point_labels': np.array([1] * len(points)),
+    }
+
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    seg.prompt = frame
-    seg.get_mask_by_box_prompt(bboxes)
-    mask, unique_mask = seg.convert_mask_to_color()
-    seg.clear_memory()
+    seg = Segmenter2()
+    seg.set_image(frame)
+    
+    maskss = []
+    for point in points:
+        prompts = {
+            'point_coords': np.array([point]),
+            'point_labels': np.array([1]),
+        }
+        masks, scores, logits = seg.predict(prompts, mode)
+        maskss.append(masks[np.argmax(scores)])
+    mask, unique_mask = merge_masks(maskss)
+    
     masks = []
     images = []
     traker = TrackerCore()
