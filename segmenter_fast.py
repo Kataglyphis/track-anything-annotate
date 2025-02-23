@@ -63,18 +63,6 @@ class Segmenter:
 
         return mask_end, unique_mask
 
-    def convert_mask_to_white(self):
-        mask = self.mask
-        mask = np.uint8(mask) * 255
-        mask_end = mask[0]
-        if len(mask) == 1:
-            return mask_end
-
-        for i in range(1, len(mask)):
-            mask_end = cv2.addWeighted(mask_end, 1, mask[i], 1, 0.0)
-
-        return mask_end
-
     def annotated_frame(self) -> np.ndarray:
         annotated_frame = self.prompt_process.plot_to_result(
             annotations=self.mask,

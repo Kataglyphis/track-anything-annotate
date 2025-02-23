@@ -11,10 +11,11 @@ from XMem2.util.range_transform import im_normalization
 from XMem2.inference.interact.interactive_utils import (
     overlay_davis,
 )
-from segmenter_test import Segmenter2
+from segmenter import Segmenter2
 from tools.mask_display import visualize_wb_mask, mask_map
 from tools.contour_detector import getting_coordinates
 from tools.mask_merge import merge_masks
+
 
 class TrackerCore:
     def __init__(self, device: str = DEVICE):
@@ -80,7 +81,7 @@ if __name__ == '__main__':
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     seg = Segmenter2()
     seg.set_image(frame)
-    
+
     maskss = []
     for point in points:
         prompts = {
@@ -90,7 +91,7 @@ if __name__ == '__main__':
         masks, scores, logits = seg.predict(prompts, mode)
         maskss.append(masks[np.argmax(scores)])
     mask, unique_mask = merge_masks(maskss)
-    
+
     masks = []
     images = []
     traker = TrackerCore()

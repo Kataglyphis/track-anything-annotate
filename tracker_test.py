@@ -3,7 +3,7 @@ import numpy as np
 import psutil
 from tqdm import tqdm
 
-from segmenter_test import Segmenter2
+from segmenter import Segmenter2
 from tools.mask_merge import merge_masks
 from tracker_core_test import TrackerCore
 from tools.overlay_image import painter_borders
