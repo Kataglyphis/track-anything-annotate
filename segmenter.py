@@ -3,7 +3,7 @@ from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 import cv2
 import numpy as np
-from XMem.inference.interact.interactive_utils import overlay_davis
+from XMem2.inference.interact.interactive_utils import overlay_davis
 from config import DEVICE
 from tools.mask_display import visualize_unique_mask, visualize_wb_mask
 import torch
@@ -22,6 +22,7 @@ class Segmenter2:
 
     @torch.no_grad()
     def set_image(self, image: np.ndarray):
+        self.original_image = image
         if self.embedded:
             print('please reset_image')
             return
@@ -36,16 +37,20 @@ class Segmenter2:
     def predict(self, prompt, mode='point', multimask=True):
 
         assert self.embedded, 'dont set image'
-        assert mode in ['point', 'box'], 'mode can be point, box'
+        assert mode in ['point', 'box', 'both'], 'mode can be point, box or both'
 
         if mode == 'point':
             masks, scores, logits = self.predictor.predict(
                 point_coords=prompt['point_coords'],
                 point_labels=prompt['point_labels'],
-                box=prompt['boxes'],
                 multimask_output=multimask,
             )
         elif mode == 'box':
+            masks, scores, logits = self.predictor.predict(
+                box=prompt['boxes'],
+                multimask_output=multimask,
+            )
+        elif mode == 'both':
             masks, scores, logits = self.predictor.predict(
                 point_coords=prompt['point_coords'],
                 point_labels=prompt['point_labels'],
@@ -60,7 +65,7 @@ class Segmenter2:
 
 if __name__ == '__main__':
     path = 'video-test/truck.jpg'
-    # path = 'video-test/video.mp4'
+    path = 'video-test/video.mp4'
     video = cv2.VideoCapture(path)
     ret, frame = video.read()
     frame_cop = frame.copy()
@@ -72,33 +77,34 @@ if __name__ == '__main__':
     prompts = {
         'mode': 'point',
         'point_coords': [[531, 230], [45, 321], [226, 360], [194, 313]],
-        'point_labels': [1] * len(points),
-        'boxes': None,
+        'point_labels': [1, 1, 1, 1],
     }
 
     prompts = {
-        'mode': 'box',
-        'point_coords': [None, None, None, None],
-        'point_labels': [None, None, None, None],
-        'boxes': [
-            [476, 166, 578, 320],
-            [8, 252, 99, 401],
-            [106, 335, 317, 425],
-            [155, 283, 225, 339],
-        ],
+        'mode': 'point',
+        'point_coords': [[[531, 230], [45, 321]], [226, 360], [194, 313]],
+        'point_labels': [[1, 0], 1, 1],
     }
-
-    prompts = {
-        'mode': 'box',
-        'point_coords': [[575, 750]],
-        'point_labels': [0],
-        'boxes': [[425, 600, 700, 875]],
-    }
+        
+    # prompts = {
+    #     'mode': 'box',
+    #     'boxes': [
+    #         [476, 166, 578, 320],
+    #         [8, 252, 99, 401],
+    #         [106, 335, 317, 425],
+    #         [155, 283, 225, 339],
+    #     ],
+    # }
 
     # prompts = {
-    #     'mode': 'sig',
-    #     'point_coords': None,
-    #     'point_labels': None,
+    #     'mode': 'both',
+    #     'point_coords': [[575, 750]],
+    #     'point_labels': [0],
+    #     'boxes': [[425, 600, 700, 875]],
+    # }
+
+    # prompts = {
+    #     'mode': 'box',
     #     'boxes': [
     #         [75, 275, 1725, 850],
     #         [425, 600, 700, 875],
@@ -122,37 +128,25 @@ if __name__ == '__main__':
             masks, scores, logits = seg.predict(prompt, prompts['mode'])
             maskss.append(masks[np.argmax(scores)])
     elif prompts['mode'] == 'box':
-        for point_c, point_l, box in zip(
-            prompts['point_coords'], prompts['point_labels'], prompts['boxes']
-        ):
+        for box in prompts['boxes']:
             prompt = {
-                'point_coords': None if point_c is None else np.array([point_c]),
-                'point_labels': None if point_l is None else np.array([point_l]),
                 'boxes': np.array([box]),
             }
-            masks, scores, logits = seg.predict(prompt, prompts['mode'], multimask=False)
+            masks, scores, logits = seg.predict(prompt, prompts['mode'], multimask=True)
             maskss.append(masks[np.argmax(scores)])
-    # else:
-    #     prompts = {
-    #         'mode': 'box',
-    #         'point_coords': None,
-    #         'point_labels': None,
-    #         'boxes': [
-    #             [476, 166, 578, 320],
-    #             [8, 252, 99, 401],
-    #             [106, 335, 317, 425],
-    #             [155, 283, 225, 339],
-    #         ],
-    #     }
-    #     masks, scores, logits = seg.predict(prompts, mode='box', multimask=False)
+        # masks, scores, logits = seg.predict(prompts, prompts['mode'], multimask=False)
+    else:
+        masks, scores, logits = seg.predict(prompts, prompts['mode'], multimask=False)
 
     print(len(maskss))
+    print(len(masks))
     # plt.imshow(frame)
-    ma = []
-    for mask in maskss:
-        # mask = show_mask(mask.squeeze(0), plt.gca(), random_color=True)
-        mask = create_mask(mask, random_color=True)
-        ma.append(mask)
+    if len(maskss) < 1:
+        maskss = []
+        for mask in maskss:
+            # mask = show_mask(mask.squeeze(0), plt.gca(), random_color=True)
+            mask = create_mask(mask.squeeze(0), random_color=True)
+            maskss.append(mask)
     # plt.axis('off')
     # plt.show()
     # input_box = np.array([425, 600, 700, 875])
@@ -169,6 +163,7 @@ if __name__ == '__main__':
     mask, unique_mask = merge_masks(maskss)
     f = overlay_davis(frame, unique_mask)
     mask = visualize_unique_mask(unique_mask)
+    f = cv2.cvtColor(f, cv2.COLOR_BGR2RGB)
     cv2.imshow('asd', mask)
     cv2.imshow('asd', f)
     cv2.waitKey(0)
