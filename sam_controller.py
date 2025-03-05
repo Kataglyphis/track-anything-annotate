@@ -147,6 +147,8 @@ class SegmenterController:
         else:
             raise ValueError("Режим должен быть 'point', 'box' или 'both'.")
 
+        # TODO: добавить вариант без цикла
+
         for prompt, multimask in processed_prompts:
             try:
                 masks, scores, logits = self.segmenter.predict(
@@ -172,11 +174,12 @@ if __name__ == '__main__':
     video.release()
     controller.load_image(frame)
     import timeit
+
     # Пример 1: Точки
     prompts = {
         'mode': 'point',
         'point_coords': [[531, 230], [45, 321], [226, 360], [194, 313]],
-        'point_labels': [1, 0, 1, 1],
+        'point_labels': [1, 1, 1, 1],
     }
 
     # prompts = {
@@ -191,9 +194,9 @@ if __name__ == '__main__':
             'point_labels': [1, 0, 1, 1],
         }
         return controller.predict_from_prompts(prompts)
-    
+
     results = controller.predict_from_prompts(prompts)
-    
+
     execution_time_ms = timeit.timeit(run_segmentation, number=1) * 1000
     print(f"Время выполнения: {execution_time_ms:.2f} мс")
     # Пример 2: Рамки

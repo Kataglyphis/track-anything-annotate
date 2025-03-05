@@ -8,6 +8,7 @@ from tools.mask_merge import merge_masks
 from tracker_core_test import TrackerCore
 from tools.overlay_image import painter_borders
 from XMem2.inference.interact.interactive_utils import overlay_davis
+from sam_controller import SegmenterController
 
 
 def get_frames(video_path: str, frames_to_propagate: int = 0):
@@ -34,22 +35,23 @@ def get_frames(video_path: str, frames_to_propagate: int = 0):
 
 class Tracking:
     def __init__(self):
-        self.segmenter = Segmenter2()
+        self.sam_controller = SegmenterController()
         self.trecker = TrackerCore()
 
-    def select_object(self, frame: np.ndarray) -> np.ndarray:
-        bboxes = [(476, 166, 102, 154), (8, 252, 91, 149), (106, 335, 211, 90)]
-        points = [[531, 230], [45, 321], [226, 360], [194, 313]]
-        self.segmenter.set_image(frame)
-        maskss = []
-        for point in points:
-            prompts = {
-                'point_coords': np.array([point]),
-                'point_labels': np.array([1]),
-            }
-            masks, scores, logits = self.segmenter.predict(prompts, 'point')
-            maskss.append(masks[np.argmax(scores)])
-        mask, unique_mask = merge_masks(maskss)
+    def select_object(self, prompts: dict) -> np.ndarray:
+        # maskss = []
+        # for point in points:
+        #     prompts = {
+        #         'point_coords': np.array([point]),
+        #         'point_labels': np.array([1]),
+        #     }
+        #     masks, scores, logits = self.segmenter.predict(prompts, 'point')
+        #     maskss.append(masks[np.argmax(scores)])
+        results = self.sam_controller.predict_from_prompts(prompts)
+        results_masks = [
+            result[np.argmax(scores)] for result, scores, logits in results
+        ]
+        mask, unique_mask = merge_masks(results_masks)
         return unique_mask
 
     def tracking(self, frames: list, template_mask: np.ndarray) -> list:
@@ -58,7 +60,12 @@ class Tracking:
             current_memory_usage = psutil.virtual_memory().percent
             if current_memory_usage > 90:
                 break
-
+            """
+             TODO: улучшение точности
+                - надо проверять сколько масок в трекере
+                - смотреть сколько объектов обнаруживается
+                - если они не совпадают добавлять к новым маскам маску из трекера
+            """
             if i == 0:
                 mask = self.trecker.track(frames[i], template_mask)
                 masks.append(mask)
@@ -78,10 +85,19 @@ if __name__ == '__main__':
     video.release()
     frames, fps = get_frames(path)
     tracking = Tracking()
-    
+
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+    prompts = {
+        'mode': 'point',
+        'point_coords': [[531, 230], [45, 321], [226, 360], [194, 313]],
+        'point_labels': [1, 1, 1, 1],
+    }
     
-    mask = tracking.select_object(frame)
+    tracking.sam_controller.load_image(frame)
+    mask = tracking.select_object(prompts)
+    tracking.sam_controller.reset_image()
+    
     masks = tracking.tracking(frames, mask)
     filename = 'output_video_from_file_mem2.mp4'
     output = cv2.VideoWriter(filename, cv2.VideoWriter_fourcc(*'XVID'), fps, frame_size)
