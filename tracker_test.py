@@ -55,7 +55,7 @@ class Tracking:
         mask, unique_mask = merge_masks(results_masks)
         return unique_mask
 
-    def tracking(self, frames: list, template_mask: np.ndarray) -> list:
+    def tracking(self, frames: list[np.ndarray], template_mask: np.ndarray) -> list:
         masks = []
         for i in tqdm(range(len(frames)), desc='Tracking'):
             current_memory_usage = psutil.virtual_memory().percent
@@ -70,6 +70,25 @@ class Tracking:
             if i == 0:
                 mask = self.trecker.track(frames[i], template_mask)
                 masks.append(mask)
+            else:
+                mask = self.trecker.track(frames[i])
+                masks.append(mask)
+        return masks
+
+    def tracking_cut(self, frames: list[np.ndarray], templates_masks: list[np.ndarray]):
+        masks = []
+        j = 0
+        print(len(templates_masks))
+        for i in tqdm(range(len(frames)), desc='Tracking_cut'):
+            current_memory_usage = psutil.virtual_memory().percent
+            if current_memory_usage > 90:
+                break
+            template_mask = templates_masks[j]
+            if i == 0 or i % 40 == 0:
+                mask = self.trecker.track(frames[i], template_mask)
+                masks.append(mask)
+                if len(templates_masks) > 1:
+                    j += 1
             else:
                 mask = self.trecker.track(frames[i])
                 masks.append(mask)
