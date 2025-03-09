@@ -9,6 +9,7 @@ from tracker_core_test import TrackerCore
 from tools.overlay_image import painter_borders
 from XMem2.inference.interact.interactive_utils import overlay_davis
 from sam_controller import SegmenterController
+from interactive_video import InteractVideo
 
 
 def get_frames(video_path: str, frames_to_propagate: int = 0):
@@ -96,30 +97,41 @@ class Tracking:
 
 if __name__ == '__main__':
     path = 'video-test/video.mp4'
-    video = cv2.VideoCapture(path)
-    ret, frame = video.read()
-    frame_width = int(video.get(3))
-    frame_height = int(video.get(4))
-    frame_size = (frame_width, frame_height)
-    video.release()
-    frames, fps = get_frames(path)
+    controller = InteractVideo(path, 30)
+    controller.extract_frames()  # Сначала извлекаем все кадры
+    controller.collect_keypoints()
+    results = controller.get_results()
     tracking = Tracking()
+    frames = results['frames']
 
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    # prompts = {
+    #     'mode': 'point',
+    #     'point_coords': [[531, 230], [45, 321], [226, 360], [194, 313]],
+    #     'point_labels': [1, 1, 1, 1],
+    # }
 
-    prompts = {
-        'mode': 'point',
-        'point_coords': [[531, 230], [45, 321], [226, 360], [194, 313]],
-        'point_labels': [1, 1, 1, 1],
-    }
+    select_masks = {}
+    for frame_idx, points in results['keypoints'].items():
 
-    tracking.sam_controller.load_image(frame)
-    mask = tracking.select_object(prompts)
-    tracking.sam_controller.reset_image()
+        if len(points) != 0:
+            tracking.sam_controller.load_image(frames[frame_idx])
+            prompts = {
+                'mode': 'point',
+                'point_coords': points,
+                'point_labels': [1] * len(points)
+            }
+            mask = tracking.select_object(prompts)
+            select_masks[frame_idx] = mask
+            f = overlay_davis(frames[frame_idx], mask)
+            cv2.imshow('asd', f)
+            cv2.waitKey(0)
+            tracking.sam_controller.reset_image()
 
     masks = tracking.tracking(frames, mask)
     filename = 'output_video_from_file_mem2.mp4'
-    output = cv2.VideoWriter(filename, cv2.VideoWriter_fourcc(*'XVID'), fps, frame_size)
+    output = cv2.VideoWriter(
+        filename, cv2.VideoWriter_fourcc(*'XVID'), controller.fps, controller.frame_size
+    )
     for frame, mask in zip(frames, masks):
         # f = painter_borders(frame, mask)
         f = overlay_davis(frame, mask)
