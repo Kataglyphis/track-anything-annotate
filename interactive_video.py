@@ -14,13 +14,19 @@ class InteractVideo:
         self.current_frame_idx = 0  # Текущий индекс кадра
         self.history = []  # Для отслеживания пропущенных кадров
 
-    def extract_frames(self, frames_to_propagate: int = 0):
+    def extract_frames(
+        self,
+        frames_to_propagate: int = 0,
+        max_width: int = 1280,
+        max_height: int = 1280,
+    ):
         """Извлекает все кадры из видео и сохраняет в self.frames"""
         cap = cv2.VideoCapture(self.video_path)
         self.fps = cap.get(cv2.CAP_PROP_FPS)
-        frame_width = int(cap.get(3))
-        frame_height = int(cap.get(4))
-        self.frame_size = (frame_width, frame_height)
+        original_width = int(cap.get(3))
+        original_height = int(cap.get(4))
+        self.original_frame_size = (original_width, original_height) 
+        self.frame_size = self.original_frame_size
         frame_index = 0
         count_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
 
@@ -37,7 +43,19 @@ class InteractVideo:
                 break
             if frame_index > frames_to_propagate:
                 break
+            # Проверка и изменение размера кадра
+            if max_width or max_height:
+                h, w = frame.shape[:2]
+                ratio_w = max_width / w if max_width else float('inf')
+                ratio_h = max_height / h if max_height else float('inf')
+                ratio = min(ratio_w, ratio_h, 1.0)  # Не увеличиваем изображение
 
+                if ratio < 1.0:
+                    new_size = (int(w * ratio), int(h * ratio))
+                    frame = cv2.resize(frame, new_size)
+                    # Обновляем размер кадра для первого кадра
+                    if frame_index == 0:
+                        self.frame_size = new_size
             self.frames.append(frame)
             frame_index += 1
             bar.update(frame_index)
@@ -64,7 +82,7 @@ class InteractVideo:
 
                     # Подтверждение выбора
                     if key == 13:  # Enter
-                        self.keypoints[self.current_frame_idx] = (
+                        self.keypoints[str(self.current_frame_idx)] = (
                             self.current_points.copy()
                         )
                         self.history.append(self.current_frame_idx)
@@ -99,10 +117,10 @@ class InteractVideo:
         h, w = frame.shape[:2]
 
         # Панель управления
-        cv2.rectangle(frame, (0, 0), (w, 50), (0, 0, 0), -1)
+        cv2.rectangle(frame, (0, 0), (w, 40), (0, 0, 0), -1)
         cv2.putText(
             frame,
-            f"Кадр {self.current_frame_idx}",
+            f"Frame {self.current_frame_idx}",
             (10, 30),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.7,
@@ -112,7 +130,7 @@ class InteractVideo:
         cv2.putText(
             frame,
             "Enter - save  Z - back  S - skip",
-            (10, 50),
+            (10, 40),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
             (255, 255, 255),
@@ -135,9 +153,10 @@ class InteractVideo:
             event == cv2.EVENT_LBUTTONDOWN
             and self.current_frame_idx % self.keyframe_interval == 0
         ):
+            print(f'Кадр {self.current_frame_idx}')
             if len(self.current_points) < 10:
                 self.current_points.append((x, y))
-                print(f"Точка добавлена: ({x}, {y})")
+                print(f'Точка добавлена: ({x}, {y})')
             else:
                 print("Достигнут лимит точек (10)")
 
@@ -156,4 +175,4 @@ if __name__ == '__main__':
     results = controller.get_results()
     print(f'Всего кадров: {len(results['frames'])}')
     for frame_idx, points in results['keypoints'].items():
-        print(f"Кадр {frame_idx}: {len(points)} точек")
+        print(f"Кадр {type(frame_idx)}: {len(points)} точек")
