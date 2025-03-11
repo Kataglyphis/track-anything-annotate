@@ -8,9 +8,7 @@ from XMem2.inference.data.mask_mapper import MaskMapper
 from config import XMEM_CONFIG, DEVICE
 from torchvision import transforms
 from XMem2.util.range_transform import im_normalization
-from XMem2.inference.interact.interactive_utils import (
-    overlay_davis,
-)
+from XMem2.inference.interact.interactive_utils import overlay_davis
 from segmenter import Segmenter2
 from tools.mask_display import visualize_wb_mask, mask_map
 from tools.contour_detector import getting_coordinates
@@ -34,9 +32,11 @@ class TrackerCore:
         self.mapper = MaskMapper()
 
     @torch.no_grad()
-    def track(self, frame: np.ndarray, mask_segmet: np.ndarray = None):
+    def track(
+        self, frame: np.ndarray, mask_segmet: np.ndarray = None, exhaustive=False
+    ):
         if mask_segmet is not None:
-            mask, labels = self.mapper.convert_mask(mask_segmet)
+            mask, labels = self.mapper.convert_mask(mask_segmet, exhaustive)
             mask = torch.Tensor(mask).to(self.device)
             self.processor.set_all_labels(list(self.mapper.remappings.values()))
         else:
@@ -59,6 +59,7 @@ class TrackerCore:
     @torch.no_grad()
     def clear_memory(self):
         self.processor.clear_memory()
+        self.mapper.clear_lables()
         torch.cuda.empty_cache()
 
 
