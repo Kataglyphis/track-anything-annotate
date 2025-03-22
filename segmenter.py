@@ -14,7 +14,7 @@ from tools.overlay_image import show_mask
 class Segmenter2:
     def __init__(self, device: str = DEVICE):
         self.device = device
-        sam2_checkpoint = 'models/sam2_hiera_large.pt'
+        sam2_checkpoint = 'checkpoints/sam2_hiera_large.pt'
         model_cfg = 'sam2_hiera_l.yaml'
         build = build_sam2(model_cfg, sam2_checkpoint, device=self.device)
         self.predictor = SAM2ImagePredictor(build)

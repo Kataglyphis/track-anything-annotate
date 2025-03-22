@@ -3,8 +3,8 @@ import requests
 # URL файла для скачивания
 url = 'https://github.com/hkchengrex/XMem/releases/download/v1.0/XMem.pth'
 # Имя файла, под которым он будет сохранен
-file_name = 'models/XMem.pth'
-path = 'models'
+file_name = 'XMem.pth'
+path = 'checkpoints'
 # Базовые URL-адреса
 BASE_URL_PT_1 = "https://dl.fbaipublicfiles.com/segment_anything_2/092824"
 BASE_URL_YAML_1 = (
@@ -13,7 +13,7 @@ BASE_URL_YAML_1 = (
 
 
 # Словарь для чекпоинтов (.pt)
-CHECKPOINTS_PT_1 = {
+CHECKPOINTS_PT_2_1 = {
     f"{path}/sam2.1_hiera_tiny.pt": f"{BASE_URL_PT_1}/sam2.1_hiera_tiny.pt",
     f"{path}/sam2.1_hiera_small.pt": f"{BASE_URL_PT_1}/sam2.1_hiera_small.pt",
     f"{path}/sam2.1_hiera_base_plus.pt": f"{BASE_URL_PT_1}/sam2.1_hiera_base_plus.pt",
@@ -21,21 +21,18 @@ CHECKPOINTS_PT_1 = {
 }
 
 # Словарь для конфигурационных файлов (.yaml)
-CHECKPOINTS_YAML_1 = {
-    f"{path}/sam2.1_hiera_t.yaml": f"{BASE_URL_YAML_1}/sam2.1_hiera_t.yaml",
-    f"{path}/sam2.1_hiera_s.yaml": f"{BASE_URL_YAML_1}/sam2.1_hiera_s.yaml",
-    f"{path}/sam2.1_hiera_b+.yaml": f"{BASE_URL_YAML_1}/sam2.1_hiera_b+.yaml",
-    f"{path}/sam2.1_hiera_l.yaml": f"{BASE_URL_YAML_1}/sam2.1_hiera_l.yaml",
-}
+# CHECKPOINTS_YAML_1 = {
+#     f"{path}/sam2.1_hiera_t.yaml": f"{BASE_URL_YAML_1}/sam2.1_hiera_t.yaml",
+#     f"{path}/sam2.1_hiera_s.yaml": f"{BASE_URL_YAML_1}/sam2.1_hiera_s.yaml",
+#     f"{path}/sam2.1_hiera_b+.yaml": f"{BASE_URL_YAML_1}/sam2.1_hiera_b+.yaml",
+#     f"{path}/sam2.1_hiera_l.yaml": f"{BASE_URL_YAML_1}/sam2.1_hiera_l.yaml",
+# }
 
-'''
-Работающие модели
-'''
 BASE_URL_PT = "https://dl.fbaipublicfiles.com/segment_anything_2/072824"
 BASE_URL_YAML = "https://raw.githubusercontent.com/Segment-Anything/segment-anything-2/main/sam2_configs"
 # https://raw.githubusercontent.com/facebookresearch/sam2/main/sam2/configs/sam2
 
-CHECKPOINTS_PT = {
+CHECKPOINTS_PT_2 = {
     f"{path}/sam2_hiera_tiny.pt": f"{BASE_URL_PT}/sam2_hiera_tiny.pt",
     f"{path}/sam2_hiera_small.pt": f"{BASE_URL_PT}/sam2_hiera_small.pt",
     f"{path}/sam2_hiera_base_plus.pt": f"{BASE_URL_PT}/sam2_hiera_base_plus.pt",
@@ -43,12 +40,12 @@ CHECKPOINTS_PT = {
 }
 
 # Словарь для конфигурационных файлов (.yaml)
-CHECKPOINTS_YAML = {
-    f"{path}/sam2_hiera_t.yaml": f"{BASE_URL_YAML}/sam2_hiera_t.yaml",
-    f"{path}/sam2_hiera_s.yaml": f"{BASE_URL_YAML}/sam2_hiera_s.yaml",
-    f"{path}/sam2_hiera_b+.yaml": f"{BASE_URL_YAML}/sam2_hiera_b+.yaml",
-    f"{path}/sam2_hiera_l.yaml": f"{BASE_URL_YAML}/sam2_hiera_l.yaml",
-}
+# CHECKPOINTS_YAML = {
+#     f"{path}/sam2_hiera_t.yaml": f"{BASE_URL_YAML}/sam2_hiera_t.yaml",
+#     f"{path}/sam2_hiera_s.yaml": f"{BASE_URL_YAML}/sam2_hiera_s.yaml",
+#     f"{path}/sam2_hiera_b+.yaml": f"{BASE_URL_YAML}/sam2_hiera_b+.yaml",
+#     f"{path}/sam2_hiera_l.yaml": f"{BASE_URL_YAML}/sam2_hiera_l.yaml",
+# }
 
 
 def download_checkpoint(url, filename):
@@ -70,11 +67,10 @@ def download_checkpoint(url, filename):
 if __name__ == "__main__":
     # download_checkpoint(url, file_name)
     # Сначала скачиваем .pt файлы
-    for filename, url in CHECKPOINTS_PT.items():
+    for filename, url in CHECKPOINTS_PT_2.items():
         download_checkpoint(url, filename)
 
-    # Затем скачиваем .yaml файлы
-    for filename, url in CHECKPOINTS_YAML.items():
+    for filename, url in CHECKPOINTS_PT_2_1.items():
         download_checkpoint(url, filename)
 
     print("All checkpoints and configuration files are downloaded successfully.")
