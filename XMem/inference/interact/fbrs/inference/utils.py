@@ -68,7 +68,7 @@ def load_deeplab_is_model(state_dict, device, backbone='auto', deeplab_ch=128, a
                           cpu_dist_maps=False, norm_radius=260):
     if backbone == 'auto':
         num_backbone_params = len([x for x in state_dict.keys()
-                                   if 'feature_extractor.backbone' in x and not('num_batches_tracked' in x)])
+                                   if 'feature_extractor.backbone' in x and 'num_batches_tracked' not in x])
 
         if num_backbone_params <= 181:
             backbone = 'resnet34'

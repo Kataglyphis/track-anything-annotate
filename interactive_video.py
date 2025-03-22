@@ -1,5 +1,4 @@
 import cv2
-import numpy as np
 import progressbar
 
 
@@ -25,7 +24,7 @@ class InteractVideo:
         self.fps = cap.get(cv2.CAP_PROP_FPS)
         original_width = int(cap.get(3))
         original_height = int(cap.get(4))
-        self.original_frame_size = (original_width, original_height) 
+        self.original_frame_size = (original_width, original_height)
         self.frame_size = self.original_frame_size
         frame_index = 0
         count_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)

@@ -1,7 +1,7 @@
 import os
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Set, Tuple, Union
+from typing import Dict, List, Set, Tuple
 
 import cv2
 import numpy as np

@@ -1,8 +1,6 @@
 # Credit: https://github.com/VainF/DeepLabV3Plus-Pytorch
 
-import torch
 import torch.nn as nn
-import numpy as np
 import torch.nn.functional as F
 from collections import OrderedDict
 

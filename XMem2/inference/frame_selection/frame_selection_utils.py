@@ -2,7 +2,7 @@ from functools import partial
 
 import torch
 import torchvision.transforms.functional as FT
-from torchvision.transforms import ColorJitter, Grayscale, RandomPosterize, RandomAdjustSharpness, ToTensor, RandomAffine
+from torchvision.transforms import ColorJitter, Grayscale, RandomPosterize, RandomAdjustSharpness, RandomAffine
 from tqdm import tqdm
 
 from inference.data.video_reader import Sample

@@ -1,7 +1,7 @@
 import cv2
 from matplotlib import pyplot as plt
 import numpy as np
-from tools.mask_display import mask_map, visualize_wb_mask
+from tools.mask_display import mask_map
 from tools.contour_detector import getting_coordinates
 
 

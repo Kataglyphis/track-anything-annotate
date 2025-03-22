@@ -2,7 +2,6 @@ from multiprocessing import Process, Queue, Value
 import os
 from pathlib import Path
 import queue
-from time import perf_counter
 import time
 import cv2
 import numpy as np
@@ -12,7 +11,6 @@ import torch
 from dataset.range_transform import inv_im_trans
 from collections import defaultdict
 
-from inference.interact.interactive_utils import overlay_davis
 
 def tensor_to_numpy(image):
     image_np = (image.numpy() * 255).astype('uint8')

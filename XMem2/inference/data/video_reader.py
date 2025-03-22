@@ -11,7 +11,6 @@ from torch.utils.data.dataset import Dataset
 from torchvision import transforms
 from torchvision.transforms import InterpolationMode
 import torch.nn.functional as F
-import torchvision.transforms.functional as FT
 from PIL import Image
 import numpy as np
 

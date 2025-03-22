@@ -2,7 +2,7 @@ import cv2
 from XMem2.inference.interact.interactive_utils import overlay_davis
 from segmenter import Segmenter2
 from tools.mask_display import visualize_unique_mask
-from tools.mask_merge import create_mask, merge_masks
+from tools.mask_merge import merge_masks
 import numpy as np
 
 

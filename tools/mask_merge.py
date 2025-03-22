@@ -40,12 +40,12 @@ def merge_masks(masks, method='max'):
 
 def create_mask(mask, random_color=False):
     # Генерация цвета
-    if random_color:
-        color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
-    else:
-        color = np.array(
-            [30 / 255, 144 / 255, 255 / 255, 0.6]
-        )  # Синий цвет с прозрачностью
+    # if random_color:
+    #     color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
+    # else:
+    #     color = np.array(
+    #         [30 / 255, 144 / 255, 255 / 255, 0.6]
+    #     )  # Синий цвет с прозрачностью
 
     h, w = mask.shape[-2:]  # Получаем высоту и ширину маски
     mask = mask.astype(np.uint8)  # Приводим маску к типу uint8

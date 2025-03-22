@@ -1,6 +1,4 @@
-from functools import partial
 
-import torch
 import numpy as np
 
 

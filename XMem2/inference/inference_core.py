@@ -1,4 +1,3 @@
-from time import perf_counter
 
 import torch
 from XMem2.inference.memory_manager import MemoryManager

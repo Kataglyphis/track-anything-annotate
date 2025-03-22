@@ -28,9 +28,9 @@ import numpy as np
 import torch
 
 from PyQt5.QtWidgets import (QWidget, QApplication, QComboBox, QCheckBox,
-    QHBoxLayout, QLabel, QPushButton, QTextEdit, QSpinBox, QFileDialog,
+    QHBoxLayout, QLabel, QPushButton, QTextEdit, QFileDialog,
     QPlainTextEdit, QVBoxLayout, QSizePolicy, QButtonGroup, QSlider, QShortcut, 
-    QRadioButton, QTabWidget, QDialog, QErrorMessage, QMessageBox, QLineEdit)
+    QRadioButton, QTabWidget, QErrorMessage, QMessageBox, QLineEdit)
 
 from PyQt5.QtGui import QPixmap, QKeySequence, QImage, QTextCursor, QIcon, QRegExpValidator
 from PyQt5.QtCore import Qt, QTimer, QThreadPool, QRegExp
@@ -1168,7 +1168,7 @@ class App(QWidget):
             else:
                 if len(frame_ids) > 10:
                     qm = QMessageBox(QMessageBox.Icon.Question, "Confirm mask replacement", "")
-                    question = f"There are more than 10 masks to import, so confirmations for each individual one would not be asked. Are you willing to continue?"
+                    question = "There are more than 10 masks to import, so confirmations for each individual one would not be asked. Are you willing to continue?"
                     ret = qm.question(self, 'Confirm mask replacement', question, qm.Yes | qm.No)
                     if ret == qm.Yes:
                         progress_dialog = QProgressDialog("Importing masks", None, 0, len(frame_ids), self, Qt.WindowFlags(Qt.WindowType.Dialog | ~Qt.WindowCloseButtonHint))

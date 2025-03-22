@@ -1,7 +1,5 @@
-from copy import copy
 from pathlib import Path
-import time
-from typing import Any, Dict, List, Set, Tuple, Union
+from typing import List
 
 import cv2
 import torch

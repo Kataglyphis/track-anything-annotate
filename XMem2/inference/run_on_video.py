@@ -1,10 +1,7 @@
 from dataclasses import replace
-from functools import partial
-from multiprocessing import Process, Queue
-from os import PathLike, path
+from os import PathLike
 from tempfile import TemporaryDirectory
 from time import perf_counter
-import time
 from typing import Iterable, Optional, Union, List
 from pathlib import Path
 from warnings import warn
@@ -13,7 +10,7 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
-from torchvision.transforms import functional as FT, ToTensor
+from torchvision.transforms import ToTensor
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from PIL import Image
@@ -21,7 +18,7 @@ from PIL import Image
 from inference.frame_selection.frame_selection import select_next_candidates
 from model.network import XMem
 from util.configuration import VIDEO_INFERENCE_CONFIG
-from util.image_saver import ParallelImageSaver, create_overlay, save_image
+from util.image_saver import ParallelImageSaver
 from util.tensor_util import compute_array_iou
 from inference.inference_core import InferenceCore
 from inference.data.video_reader import Sample, VideoReader

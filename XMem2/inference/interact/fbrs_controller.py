@@ -1,4 +1,3 @@
-import torch
 from .fbrs.controller import InteractiveController
 from .fbrs.inference import utils
 

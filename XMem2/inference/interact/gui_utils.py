@@ -1,14 +1,12 @@
 from functools import partial
-from typing import Optional, Union
-import time
-import traceback, sys
-from PyQt5 import QtCore
-from PyQt5.QtGui import QPalette, QColor
+from typing import Union
+import traceback
+import sys
 
 from PyQt5.QtCore import Qt, QRunnable, pyqtSlot, pyqtSignal, QObject, QPoint, QRect, QSize
-from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QSpinBox, QVBoxLayout, QProgressBar, QDialog, QWidget,
-                             QProgressDialog, QScrollArea, QLayout, QLayoutItem, QStyle, QSizePolicy, QSpacerItem,
-                                QFrame, QPushButton, QSlider, QMessageBox, QGridLayout)
+from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QSpinBox, QVBoxLayout, QProgressBar, QWidget,
+                             QLayout, QLayoutItem, QStyle, QSizePolicy, QSpacerItem,
+                                QPushButton, QSlider, QMessageBox, QGridLayout)
 
 class WorkerSignals(QObject):
     '''

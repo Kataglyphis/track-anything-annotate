@@ -8,7 +8,6 @@ import collections
 import cv2
 from PIL import Image
 import torch
-from torchvision.transforms import Resize, InterpolationMode
 
 from util.image_loader import PaletteConverter
 

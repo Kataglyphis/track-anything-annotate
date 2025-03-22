@@ -18,10 +18,10 @@ class TrackerCore:
     def __init__(self, device: str = DEVICE):
         self.device = device
         if self.device.lower() != 'cpu':
-            self.network = XMem(XMEM_CONFIG, 'models/XMem.pth').eval().to('cuda')
+            self.network = XMem(XMEM_CONFIG, 'checkpoints/XMem.pth').eval().to('cuda')
         else:
             self.network = XMem(
-                XMEM_CONFIG, 'models/XMem.pth', map_location='cpu'
+                XMEM_CONFIG, 'checkpoints/XMem.pth', map_location='cpu'
             ).eval()
         self.processor = InferenceCore(self.network, XMEM_CONFIG)
 

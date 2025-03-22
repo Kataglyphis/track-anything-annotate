@@ -65,7 +65,7 @@ def download_checkpoint(url, filename):
 
 
 if __name__ == "__main__":
-    # download_checkpoint(url, file_name)
+    download_checkpoint(url, f'{path}/{file_name}')
     # Сначала скачиваем .pt файлы
     for filename, url in CHECKPOINTS_PT_2.items():
         download_checkpoint(url, filename)

@@ -1,21 +1,19 @@
-from matplotlib import pyplot as plt
 from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 import cv2
 import numpy as np
 from XMem2.inference.interact.interactive_utils import overlay_davis
 from config import DEVICE
-from tools.mask_display import visualize_unique_mask, visualize_wb_mask
+from tools.mask_display import visualize_unique_mask
 import torch
 from tools.mask_merge import create_mask, merge_masks
-from tools.overlay_image import show_mask
 
 
 class Segmenter2:
     def __init__(self, device: str = DEVICE):
         self.device = device
-        sam2_checkpoint = 'checkpoints/sam2_hiera_large.pt'
-        model_cfg = 'sam2_hiera_l.yaml'
+        sam2_checkpoint = 'checkpoints/sam2.1_hiera_large.pt'
+        model_cfg = 'configs/sam2.1/sam2.1_hiera_l.yaml'
         build = build_sam2(model_cfg, sam2_checkpoint, device=self.device)
         self.predictor = SAM2ImagePredictor(build)
         self.embedded = False
@@ -80,12 +78,12 @@ if __name__ == '__main__':
         'point_labels': [1, 1, 1, 1],
     }
 
-    prompts = {
-        'mode': 'point',
-        'point_coords': [[[531, 230], [45, 321]], [226, 360], [194, 313]],
-        'point_labels': [[1, 0], 1, 1],
-    }
-        
+    # prompts = {
+    #     'mode': 'point',
+    #     'point_coords': [[[531, 230], [45, 321]], [226, 360], [194, 313]],
+    #     'point_labels': [[1, 0], 1, 1],
+    # }
+
     # prompts = {
     #     'mode': 'box',
     #     'boxes': [
