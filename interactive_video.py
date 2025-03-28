@@ -17,15 +17,14 @@ class InteractVideo:
         self,
         frames_to_propagate: int = 0,
         max_width: int = 1280,
-        max_height: int = 1280,
+        max_height: int = 720,
     ):
         """Извлекает все кадры из видео и сохраняет в self.frames"""
         cap = cv2.VideoCapture(self.video_path)
         self.fps = cap.get(cv2.CAP_PROP_FPS)
         original_width = int(cap.get(3))
         original_height = int(cap.get(4))
-        self.original_frame_size = (original_width, original_height)
-        self.frame_size = self.original_frame_size
+        self.frame_size = (original_width, original_height)
         frame_index = 0
         count_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
 
@@ -119,7 +118,7 @@ class InteractVideo:
         cv2.rectangle(frame, (0, 0), (w, 40), (0, 0, 0), -1)
         cv2.putText(
             frame,
-            f"Frame {self.current_frame_idx}",
+            f"Frame {self.current_frame_idx} from {self.fps}",
             (10, 30),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.7,
