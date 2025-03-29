@@ -4,7 +4,7 @@ import progressbar
 
 class InteractVideo:
     def __init__(
-        self, video_path: str, keyframe_interval: int = 40, one_frame: bool = False
+        self, video_path: str, keyframe_interval: int = 3, one_frame: bool = False
     ):
         self.video_path = video_path
         self.frames = []
@@ -79,19 +79,25 @@ class InteractVideo:
                     key = cv2.waitKey(100)
 
                     # Подтверждение выбора
-                    if key == 13:  # Enter
+                    if key == 13 or key == ord('s'):  # Enter
                         self.keypoints[str(self.current_frame_idx)] = (
                             self.current_points.copy()
                         )
                         self.history.append(self.current_frame_idx)
                         self.current_frame_idx += 1
                         break
+                    elif key == ord('w'):
+                        self.keypoints[str(self.current_frame_idx)] = []
+                        self.history.append(self.current_frame_idx)
+                        self.current_frame_idx += 1
+                        break
                     # Пропуск кадра
-                    elif key == ord('s'):
+                    elif key == ord('d'):
+                        self.history.append(self.current_frame_idx)
                         self.current_frame_idx += 1
                         break
                     # Назад
-                    elif key == ord('z') and self.history:
+                    elif key == ord('a') and self.history:
                         prev_idx = self.history.pop()
                         self.current_frame_idx = prev_idx
                         break
@@ -111,14 +117,14 @@ class InteractVideo:
 
     def show_frame_with_controls(self):
         """Показывает кадр с элементами управления"""
-        frame = self.frames[self.current_frame_idx].copy()
-        h, w = frame.shape[:2]
+        self.current_frame = self.frames[self.current_frame_idx].copy()
+        h, w = self.current_frame.shape[:2]
 
         # Панель управления
-        cv2.rectangle(frame, (0, 0), (w, 40), (0, 0, 0), -1)
+        cv2.rectangle(self.current_frame, (0, 0), (w, 40), (0, 0, 0), -1)
         cv2.putText(
-            frame,
-            f"Frame {self.current_frame_idx} from {self.fps}",
+            self.current_frame,
+            f"Frame {self.current_frame_idx} from {len(self.frames)}",
             (10, 30),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.7,
@@ -126,8 +132,8 @@ class InteractVideo:
             2,
         )
         cv2.putText(
-            frame,
-            "Enter - save  Z - back  S - skip",
+            self.current_frame,
+            "Enter/s - save  a - back  d - skip w - void save",
             (10, 40),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
@@ -136,14 +142,14 @@ class InteractVideo:
         )
 
         # Сетка
-        cv2.line(frame, (w // 2, 0), (w // 2, h), (0, 255, 0), 1)
-        cv2.line(frame, (0, h // 2), (w, h // 2), (0, 255, 0), 1)
+        cv2.line(self.current_frame, (w // 2, 0), (w // 2, h), (0, 255, 0), 1)
+        cv2.line(self.current_frame, (0, h // 2), (w, h // 2), (0, 255, 0), 1)
 
         # Точки
         for x, y in self.current_points:
-            cv2.circle(frame, (x, y), 5, (0, 0, 255), -1)
+            cv2.circle(self.current_frame, (x, y), 5, (0, 0, 255), -1)
 
-        cv2.imshow("Frame", frame)
+        cv2.imshow("Frame", self.current_frame)
 
     def mouse_callback(self, event, x, y, flags, param):
         """Обработчик кликов мыши"""
@@ -155,6 +161,8 @@ class InteractVideo:
             if len(self.current_points) < 10:
                 self.current_points.append((x, y))
                 print(f'Точка добавлена: ({x}, {y})')
+                cv2.circle(self.current_frame, (x, y), 5, (0, 0, 255), -1)
+                cv2.imshow("Frame", self.current_frame)
             else:
                 print("Достигнут лимит точек (10)")
 
@@ -167,10 +175,46 @@ class InteractVideo:
 
 
 if __name__ == '__main__':
-    controller = InteractVideo('video-test/VID_20241218_134328.mp4', 30)
+    controller = InteractVideo('video-test/VID_20241218_134328.mp4')
     controller.extract_frames()  # Сначала извлекаем все кадры
     controller.collect_keypoints()
     results = controller.get_results()
     print(f'Всего кадров: {len(results['frames'])}')
     for frame_idx, points in results['keypoints'].items():
-        print(f"Кадр {type(frame_idx)}: {len(points)} точек")
+        if points:
+            print(f"Кадр {frame_idx}: {len(points)} точек")
+        else:
+            print(f'Пустой кадр {frame_idx}')
+
+    select_masks = {}
+    points_frames = []
+    for frame_idx, points in results['keypoints'].items():
+        if points:
+            select_masks[frame_idx] = len(points)
+        points_frames.append(int(frame_idx))
+    points_frames.append(len(controller.frames))
+
+    print(f'{len(select_masks)=}')
+    print(f'{select_masks=}')
+    print(f'{len(points_frames)=}')
+    print(f'{points_frames}')
+
+    frames_idx = list(map(int, results['keypoints'].keys()))
+    result = []
+    for i in range(len(frames_idx) - 1):
+        current_frame = frames_idx[i]
+        current_coords = results['keypoints'][str(current_frame)]
+        
+        next_frame = frames_idx[i + 1]
+        result.append(
+            {
+                "gap": [current_frame, next_frame],
+                "frame": current_frame,
+                "coords": current_coords if current_coords else None,
+            }
+        )
+        
+    print(result)
+    # for i, (frame_idx, mask) in enumerate(select_masks.items()):
+    #     print(f'{frame_idx=}')
+    #     print(f'{points_frames[i]}—{points_frames[i+1]}')
