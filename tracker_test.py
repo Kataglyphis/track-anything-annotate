@@ -89,7 +89,7 @@ if __name__ == '__main__':
     path = 'video-test/VID_20241218_134328.mp4'
     key_interval = 3
     controller = InteractVideo(path, key_interval)
-    controller.extract_frames()  # Сначала извлекаем все кадры
+    controller.extract_frames()
     controller.collect_keypoints()
     results = controller.get_results()
     tracking = Tracking()
@@ -102,8 +102,7 @@ if __name__ == '__main__':
     # }
 
     frames_idx = list(map(int, results['keypoints'].keys()))
-    frames_idx.append(len(controller.frames))
-    print(frames_idx)
+
     result = []
     for i in range(len(frames_idx) - 1):
         current_frame = frames_idx[i]
@@ -136,26 +135,9 @@ if __name__ == '__main__':
                 }
             )
 
-    # select_masks = {}
-    # points_frames = []
-    # for frame_idx, points in results['keypoints'].items():
-    #     if points:
-    #         tracking.sam_controller.load_image(frames[int(frame_idx)])
-    #         prompts = {
-    #             'mode': 'point',
-    #             'point_coords': points,
-    #             'point_labels': [1] * len(points),
-    #         }
-    #         mask = tracking.select_object(prompts)
-    #         select_masks[frame_idx] = mask
-    #         # f = overlay_davis(frames[frame_idx], mask)
-    #         # cv2.imshow('asd', f)
-    #         # cv2.waitKey(0)
-    #         tracking.sam_controller.reset_image()
-    #     points_frames.append(int(frame_idx))
 
     # masks = tracking.tracking(frames, mask)
-    print(result)
+
     masks = []
     for res in result:
         current_frame, next_frame = res['gap']
@@ -173,20 +155,6 @@ if __name__ == '__main__':
                 binary_mask[:, :] = 1
                 m.append(binary_mask)
             masks += m
-
-    # if len(select_masks) > 1:
-    #     masks = []
-    #     curr_frame = 0
-    #     end_frame = key_interval
-    #     for frame_idx, mask in select_masks.items():
-    #         print(f'{curr_frame=} {end_frame=} ')
-    #         print(len(frames[curr_frame:end_frame]))
-    #         m = tracking.tracking(frames[curr_frame:end_frame], mask)
-    #         tracking.tracker.clear_memory()
-
-    #         masks += m
-    #         curr_frame = end_frame
-    #         end_frame += key_interval
 
     filename = 'output_video_from_file_mem2_ved_pot.mp4'
     output = cv2.VideoWriter(
