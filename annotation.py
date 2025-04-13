@@ -3,57 +3,53 @@ from tracker_test import Tracking
 from interactive_video import InteractVideo
 
 
-def main(path: str, name_class: list[str]):
-    controller_video = InteractVideo(path)
-    controller_video.extract_frames()
-    controller_video.collect_keypoints()
-    results = controller_video.get_results()
-    tracking = Tracking()
-    frames = results['frames']
-    frames_idx = list(map(int, results['keypoints'].keys()))
+def main(video_path: str, class_names: list[str]):
+    """Main function for creating annotations."""
+    video = InteractVideo(video_path)
+    video.extract_frames()
+    video.collect_keypoints()
+    results = video.get_results()
+    tracker = Tracking()
 
-    result = []
-    for i in range(len(frames_idx) - 1):
-        current_frame = frames_idx[i]
-        current_coords = results['keypoints'][str(current_frame)]
+    annotations = []
+    for i in range(len(results['keypoints']) - 1):
+        current_frame = list(results['keypoints'].keys())[i]
+        next_frame = list(results['keypoints'].keys())[i + 1]
+        current_coords = results['keypoints'][current_frame]
 
-        next_frame = frames_idx[i + 1]
-        print(current_frame, next_frame)
         if current_coords:
-            tracking.sam_controller.load_image(frames[current_frame])
+            tracker.sam_controller.load_image(results['frames'][int(current_frame)])
             prompts = {
                 'mode': 'point',
                 'point_coords': current_coords,
                 'point_labels': [1] * len(current_coords),
             }
-            mask = tracking.select_object(prompts)
-            tracking.sam_controller.reset_image()
-            result.append(
+            mask = tracker.select_object(prompts)
+            tracker.sam_controller.reset_image()
+            annotations.append(
                 {
-                    "gap": [current_frame, next_frame],
-                    "frame": current_frame,
-                    "mask": mask,
+                    'gap': [current_frame, next_frame],
+                    'frame': current_frame,
+                    'mask': mask,
                 }
             )
 
     masks = []
     images_ann = []
-    for res in result:
-        current_frame, next_frame = res['gap']
-        if res['mask'] is not None:
-            print(current_frame, next_frame)
-
-            images = frames[current_frame:next_frame]
-            mask = tracking.tracking(images, res['mask'])
-            tracking.tracker.clear_memory()
+    for ann in annotations:
+        current_frame, next_frame = ann['gap']
+        if ann['mask'] is not None:
+            images = results['frames'][int(current_frame):int(next_frame)]
+            mask = tracker.tracking(images, ann['mask'])
+            tracker.tracker.clear_memory()
             masks += mask
             images_ann += images
 
     assert len(masks) == len(images_ann)
 
-    saves = get_type(images_ann, masks, name_class)
-    saves.start_creation()
-    saves.create_archive()
+    saver = get_type(images_ann, masks, class_names)
+    saver.start_creation()
+    saver.create_archive()
 
 
 if __name__ == '__main__':

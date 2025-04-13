@@ -54,7 +54,7 @@ class InteractVideo:
                     # Обновляем размер кадра для первого кадра
                     if frame_index == 0:
                         self.frame_size = new_size
-            self.frames.append(frame)
+            self.frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
             frame_index += 1
             bar.update(frame_index)
         bar.finish()
@@ -215,6 +215,3 @@ if __name__ == '__main__':
         )
         
     print(result)
-    # for i, (frame_idx, mask) in enumerate(select_masks.items()):
-    #     print(f'{frame_idx=}')
-    #     print(f'{points_frames[i]}—{points_frames[i+1]}')

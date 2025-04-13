@@ -5,7 +5,6 @@ from tqdm import tqdm
 
 from tools.mask_merge import merge_masks
 from tracker_core import TrackerCore
-from tools.overlay_image import painter_borders
 from XMem.inference.interact.interactive_utils import overlay_davis
 from sam_controller import SegmenterController
 from interactive_video import InteractVideo

@@ -1,40 +1,50 @@
 from PIL import Image, ImageDraw, ImageFont
 import os
 from pathlib import Path
-import shutil
 
 
 def draw(images_path, labels_path):
     pa = Path.cwd() / 'video-test' / 'dt-tomato'
     pal = Path(pa / labels_path)
-    # dir_list = glob.glob(os.path.join(f'{pa}/{labels_path}', f'*.txt'))
     dir_list = sorted(pal.glob('*'))
     for each in dir_list:
-        check(pa, images_path, pal, os.path.splitext(os.path.split(each)[1])[0])
+        draw_labels_on_image(
+            pa, images_path, pal, os.path.splitext(os.path.split(each)[1])[0]
+        )
 
 
-def check(path, images_path, labels_path, file_name):
-    im = Image.open(f'{path}/{images_path}/{file_name}.jpg')
-    width, height = im.size
-    with open(f"{labels_path}/{file_name}.txt") as file:
-        fl = file.readlines()[0:]
-        for line in fl:
-            a = line.split()
-            x = float(a[1]) * width
-            y = float(a[2]) * height
-            wf = float(a[3]) * width
-            hf = float(a[4]) * height
-            myFont = ImageFont.truetype('arial.ttf', 15)
-            ImageDraw.Draw(im).text((x, y), a[0], font=myFont, fill=(255, 0, 0))
-            draw = ImageDraw.Draw(im)
-            draw.rectangle(((x - wf / 2), (y - hf / 2), (x + wf / 2), (y + hf / 2)), outline=(255, 255, 255), width=2)
+def draw_labels_on_image(path, images_path, labels_path, file_name) -> None:
+    """Draws labels on an image using the provided labels file."""
+    image = Image.open(f'{path}/{images_path}/{file_name}.jpg')
+    width, height = image.size
 
-        im.save(f'{path}/t{file_name}.jpg', quality=95)
+    with open(labels_path / f"{file_name}.txt") as file:
+        for line in file:
+            class_id, x_center, y_center, width_factor, height_factor = line.split()
+            x = float(x_center) * width
+            y = float(y_center) * height
+            width_factor = int(float(width_factor) * width)
+            height_factor = int(float(height_factor) * height)
+
+            font = ImageFont.truetype("arial.ttf", 15)
+            draw = ImageDraw.Draw(image)
+            draw.text((x, y), class_id, font=font, fill=(255, 0, 0))
+            draw.rectangle(
+                (
+                    (x - width_factor // 2),
+                    (y - height_factor // 2),
+                    (x + width_factor // 2),
+                    (y + height_factor // 2),
+                ),
+                outline=(255, 255, 255),
+                width=2,
+            )
+
+    image.save(f'{path}/t{file_name}.jpg', quality=95)
 
 
 if __name__ == '__main__':
     draw('images', 'lables')
-
 
     # # Укажите путь к папке, которую нужно архивировать
     # folder_path = Path.cwd() / 'data' / 'Helmetxy'
