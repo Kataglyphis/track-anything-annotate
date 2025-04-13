@@ -7,14 +7,16 @@ requires-python = ">=3.12"
 dependencies = [
     "gdown>=5.2.0",
     "gitpython>=3.1.44",
+    "gradio>=5.25.0",
     "matplotlib==3.9.2",
     "opencv-python>=4.11.0.86",
     "progressbar2>=4.5.0",
+    "psutil>=7.0.0",
     "sam-2",
-    "segment-anything-fast>=0.1.2",
-    "setuptools>=77.0.3",
+    "setuptools>=78.1.0",
     "thinplate",
     "tqdm>=4.67.1",
+    # "segment-anything-fast"
 ]
 
 [project.optional-dependencies]
