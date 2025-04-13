@@ -8,13 +8,13 @@ uv sync --extra cpu
 
 - Скачивание моделей
 ```bash
-uv run checkpoints\download_models.py
+uv run checkpoints/download_models.py
 ```
 - Запуск демо http://127.0.0.1:8080
 ```bash
 gradio demo.py
 ```
-![alt text](video-test\cache\image.png)
+![alt text](video-test/cache/image.png)
 
 - Для создания датасетов 
 ```bash
