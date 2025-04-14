@@ -1,5 +1,5 @@
 from sam_controller import SegmenterController
-from tools.data_exporter import get_type
+from tools.data_exporter import get_type_save_annotation
 from tracker import Tracker
 from interactive_video import InteractVideo
 from tracker_core_xmem2 import TrackerCore
@@ -51,7 +51,7 @@ def main(video_path: str, class_names: list[str]):
 
     assert len(masks) == len(images_ann)
 
-    saver = get_type(images_ann, masks, class_names)
+    saver = get_type_save_annotation(images_ann, masks, class_names)
     saver.start_creation()
     saver.create_archive()
 

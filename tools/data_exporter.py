@@ -32,7 +32,7 @@ class TypeSave(Protocol):
         pass
 
 
-def get_type(
+def get_type_save_annotation(
     images: list[np.ndarray],
     masks: list[np.ndarray],
     names_class: list[str],
