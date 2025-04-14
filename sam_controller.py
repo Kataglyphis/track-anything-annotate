@@ -1,6 +1,6 @@
 import cv2
 from XMem2.inference.interact.interactive_utils import overlay_davis
-from segmenter import Segmenter2
+from segmenter import Segmenter
 from tools.mask_display import visualize_unique_mask
 from tools.mask_merge import merge_masks
 import numpy as np
@@ -12,7 +12,7 @@ class SegmenterController:
         Инициализация контроллера для работы с Segmenter2.
         :param device: Устройство для выполнения вычислений ('cuda' или 'cpu').
         """
-        self.segmenter = Segmenter2()
+        self.segmenter = Segmenter()
         self.image_set = False
 
     def load_image(self, image: np.ndarray):

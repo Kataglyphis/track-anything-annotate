@@ -1,15 +1,19 @@
+from sam_controller import SegmenterController
 from tools.data_exporter import get_type
-from tracker_test import Tracking
+from tracker import Tracker
 from interactive_video import InteractVideo
+from tracker_core_xmem2 import TrackerCore
 
 
 def main(video_path: str, class_names: list[str]):
-    """Main function for creating annotations."""
     video = InteractVideo(video_path)
     video.extract_frames()
     video.collect_keypoints()
     results = video.get_results()
-    tracker = Tracking()
+
+    segmenter_controller = SegmenterController()
+    tracker_core = TrackerCore()
+    tracker = Tracker(segmenter_controller, tracker_core)
 
     annotations = []
     for i in range(len(results['keypoints']) - 1):
@@ -39,7 +43,7 @@ def main(video_path: str, class_names: list[str]):
     for ann in annotations:
         current_frame, next_frame = ann['gap']
         if ann['mask'] is not None:
-            images = results['frames'][int(current_frame):int(next_frame)]
+            images = results['frames'][int(current_frame) : int(next_frame)]
             mask = tracker.tracking(images, ann['mask'])
             tracker.tracker.clear_memory()
             masks += mask

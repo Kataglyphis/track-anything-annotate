@@ -9,7 +9,7 @@ import torch
 from tools.mask_merge import create_mask, merge_masks
 
 
-class Segmenter2:
+class Segmenter:
     def __init__(self, device: str = DEVICE):
         self.device = device
         sam2_checkpoint = 'checkpoints/sam2.1_hiera_large.pt'
@@ -112,7 +112,7 @@ if __name__ == '__main__':
     # }
 
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    seg = Segmenter2()
+    seg = Segmenter()
     seg.set_image(frame)
 
     maskss = []

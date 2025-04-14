@@ -3,7 +3,9 @@ import cv2
 import numpy as np
 from PIL import Image, ImageDraw
 from XMem2.inference.interact.interactive_utils import overlay_davis
-from tracker_test import Tracking
+from sam_controller import SegmenterController
+from tracker import Tracker
+from tracker_core_xmem2 import TrackerCore
 
 
 # --- Извлечение всех кадров ---
@@ -49,7 +51,10 @@ def tracking(frames: np.ndarray, video_state: dict) -> list[np.ndarray]:
     tracker.sam_controller.reset_image()
     masks = tracker.tracking(frames, video_state["mask"])
     video_state["annotations_masks"] = masks
-    video_state["annotation_images"] = [overlay_davis(frame, mask) for frame, mask in zip(frames, masks)]
+    video_state["annotation_images"] = [
+        overlay_davis(frame, mask) for frame, mask in zip(frames, masks)
+    ]
+    tracker.tracker.clear_memory()
     return video_state, video_state["annotation_images"]
 
 
@@ -68,7 +73,9 @@ def annotations(
     return image, video_state
 
 
-tracker = Tracking()
+segmenter_controller = SegmenterController()
+tracker_core = TrackerCore()
+tracker = Tracker(segmenter_controller, tracker_core)
 
 # --- Интерфейс Gradio ---
 with gr.Blocks() as demo:

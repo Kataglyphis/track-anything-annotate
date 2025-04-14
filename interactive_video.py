@@ -204,7 +204,7 @@ if __name__ == '__main__':
     for i in range(len(frames_idx) - 1):
         current_frame = frames_idx[i]
         current_coords = results['keypoints'][str(current_frame)]
-        
+
         next_frame = frames_idx[i + 1]
         result.append(
             {
@@ -213,5 +213,5 @@ if __name__ == '__main__':
                 "coords": current_coords if current_coords else None,
             }
         )
-        
+
     print(result)

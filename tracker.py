@@ -4,38 +4,20 @@ import psutil
 from tqdm import tqdm
 
 from tools.mask_merge import merge_masks
-from tracker_core import TrackerCore
-from XMem.inference.interact.interactive_utils import overlay_davis
+from tracker_core_xmem2 import TrackerCore
+from tools.overlay_image import painter_borders
+from XMem2.inference.interact.interactive_utils import overlay_davis
 from sam_controller import SegmenterController
 from interactive_video import InteractVideo
 
 
-def get_frames(video_path: str, frames_to_propagate: int = 0):
-    frames = []
-    try:
-        cap = cv2.VideoCapture(video_path)
-        fps = cap.get(cv2.CAP_PROP_FPS)
-        count_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-        current_frame_index = 0
-        if frames_to_propagate == 0:
-            frames_to_propagate = count_frames
-        while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
-            if current_frame_index > frames_to_propagate:
-                break
-            frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-            current_frame_index += 1
-    except (OSError, TypeError, ValueError, KeyError, SyntaxError) as e:
-        print("read_frame_source:{} error. {}\n".format(video_path, str(e)))
-    return frames, fps
-
-
-class Tracking:
-    def __init__(self):
-        self.sam_controller = SegmenterController()
-        self.trecker = TrackerCore()
+class Tracker:
+    def __init__(
+        self, segmenter_controller: SegmenterController, tracker_core: TrackerCore
+    ):
+        self.sam_controller = segmenter_controller
+        self.tracker = tracker_core
+        print(f'used {TrackerCore.name_version}')
 
     def select_object(self, prompts: dict) -> np.ndarray:
         # maskss = []
@@ -53,7 +35,12 @@ class Tracking:
         mask, unique_mask = merge_masks(results_masks)
         return unique_mask
 
-    def tracking(self, frames: list[np.ndarray], template_mask: np.ndarray) -> list:
+    def tracking(
+        self,
+        frames: list[np.ndarray],
+        template_mask: np.ndarray,
+        exhaustive: bool = False,
+    ) -> list:
         masks = []
         for i in tqdm(range(len(frames)), desc='Tracking'):
             current_memory_usage = psutil.virtual_memory().percent
@@ -66,18 +53,20 @@ class Tracking:
                 - если они не совпадают добавлять к новым маскам маску из трекера
             """
             if i == 0:
-                mask = self.trecker.track(frames[i], template_mask)
+                mask = self.tracker.track(frames[i], template_mask, exhaustive)
                 masks.append(mask)
             else:
-                mask = self.trecker.track(frames[i])
+                mask = self.tracker.track(frames[i])
                 masks.append(mask)
         return masks
 
     def tracking_cut(
-        self, frames: list[np.ndarray], templates_masks: dict[str, np.ndarray]
+        self,
+        frames: list[np.ndarray],
+        templates_masks: dict[str, np.ndarray],
+        exhaustive: bool = False,
     ):
         masks = []
-        exhaustive = False
         for i in tqdm(range(len(frames)), desc='Tracking_cut'):
             current_memory_usage = psutil.virtual_memory().percent
             if current_memory_usage > 90:
@@ -87,10 +76,10 @@ class Tracking:
                 template_mask = templates_masks[str(i)]
 
             if i == 0 and str(i) in templates_masks:
-                mask = self.trecker.track(frames[i], template_mask, exhaustive)
+                mask = self.tracker.track(frames[i], template_mask, exhaustive)
                 masks.append(mask)
             else:
-                mask = self.trecker.track(frames[i])
+                mask = self.tracker.track(frames[i])
                 masks.append(mask)
 
             if len(templates_masks) > 1:
@@ -101,12 +90,16 @@ class Tracking:
 
 if __name__ == '__main__':
     path = 'video-test/VID_20241218_134328.mp4'
-    key_interval = 30
+    key_interval = 3
     controller = InteractVideo(path, key_interval)
-    controller.extract_frames(300)  # Сначала извлекаем все кадры
+    controller.extract_frames()
     controller.collect_keypoints()
     results = controller.get_results()
-    tracking = Tracking()
+
+    segmenter_controller = SegmenterController()
+    tracker_core = TrackerCore()
+    tracker = Tracker(segmenter_controller, tracker_core)
+
     frames = results['frames']
 
     # prompts = {
@@ -115,40 +108,61 @@ if __name__ == '__main__':
     #     'point_labels': [1, 1, 1, 1],
     # }
 
-    select_masks = {}
-    for frame_idx, points in results['keypoints'].items():
+    frames_idx = list(map(int, results['keypoints'].keys()))
 
-        if len(points) != 0:
-            tracking.sam_controller.load_image(frames[int(frame_idx)])
+    result = []
+    for i in range(len(frames_idx) - 1):
+        current_frame = frames_idx[i]
+        current_coords = results['keypoints'][str(current_frame)]
+
+        next_frame = frames_idx[i + 1]
+        print(current_frame, next_frame)
+        if current_coords:
+            tracker.sam_controller.load_image(frames[current_frame])
             prompts = {
                 'mode': 'point',
-                'point_coords': points,
-                'point_labels': [1] * len(points),
+                'point_coords': current_coords,
+                'point_labels': [1] * len(current_coords),
             }
-            mask = tracking.select_object(prompts)
-            select_masks[frame_idx] = mask
-
-            # f = overlay_davis(frames[frame_idx], mask)
-            # cv2.imshow('asd', f)
-            # cv2.waitKey(0)
-            tracking.sam_controller.reset_image()
+            mask = tracker.select_object(prompts)
+            tracker.sam_controller.reset_image()
+            result.append(
+                {
+                    "gap": [current_frame, next_frame],
+                    "frame": current_frame,
+                    "mask": mask,
+                }
+            )
+        else:
+            result.append(
+                {
+                    "gap": [current_frame, next_frame],
+                    "frame": current_frame,
+                    "mask": None,
+                }
+            )
 
     # masks = tracking.tracking(frames, mask)
 
-    if len(select_masks) > 1:
-        masks = []
-        curr_frame = 0
-        next = key_interval - 1
-        frames_idx = list(select_masks.keys())
-        mask = list(select_masks.values())
-        for frame_idx, mask in select_masks.items():
-            next += int(frame_idx)
-            m = tracking.tracking_cut(frames[curr_frame:next], mask)
+    masks = []
+    for res in result:
+        current_frame, next_frame = res['gap']
+        if res['mask'] is not None:
+            print(current_frame, next_frame)
+            mask = tracker.tracking(frames[current_frame:next_frame], res['mask'])
+            tracker.tracker.clear_memory()
+            masks += mask
+        else:
+            print(current_frame, next_frame)
+            m = []
+            for _ in range(current_frame, next_frame):
+                height, width, _ = frames[current_frame].shape
+                binary_mask = np.zeros((height, width), dtype=np.uint8)
+                binary_mask[:, :] = 1
+                m.append(binary_mask)
             masks += m
-            tracking.trecker.clear_memory()
-            curr_frame = next + 1
 
-    filename = 'output_video_from_file_mem2_ved.mp4'
+    filename = 'output_video_from_file_mem2_ved_pot.mp4'
     output = cv2.VideoWriter(
         filename, cv2.VideoWriter_fourcc(*'XVID'), controller.fps, controller.frame_size
     )

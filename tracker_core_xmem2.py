@@ -2,19 +2,23 @@ import cv2
 import numpy as np
 import psutil
 import torch
-from XMem.inference.inference_core import InferenceCore
-from XMem.model.network import XMem
-from XMem.inference.data.mask_mapper import MaskMapper
+from XMem2.inference.inference_core import InferenceCore
+from XMem2.model.network import XMem
+from XMem2.inference.data.mask_mapper import MaskMapper
 from config import XMEM_CONFIG, DEVICE
 from torchvision import transforms
-from XMem.util.range_transform import im_normalization
-from XMem.inference.interact.interactive_utils import overlay_davis
-from segmenter_fast import Segmenter
-from tools.mask_display import visualize_unique_mask, visualize_wb_mask, mask_map
+from XMem2.util.range_transform import im_normalization
+from XMem2.inference.interact.interactive_utils import overlay_davis
+from segmenter import Segmenter
+from tools.mask_display import visualize_wb_mask, mask_map
 from tools.contour_detector import getting_coordinates
+from tools.mask_merge import merge_masks
 
 
 class TrackerCore:
+
+    name_version = 'XMem2'
+
     def __init__(self, device: str = DEVICE):
         self.device = device
         if self.device.lower() != 'cpu':
@@ -68,14 +72,30 @@ if __name__ == '__main__':
     ret, frame = video.read()
     frame_cop = frame.copy()
     video.release()
+
     bboxes = [(476, 166, 102, 154), (8, 252, 91, 149), (106, 335, 211, 90)]
-    points = [[531, 230], [45, 321], [226, 360]]
-    seg = Segmenter('models/FastSAM-x.pt')
+    points = [[531, 230], [45, 321], [226, 360], [194, 313]]
+
+    mode = 'point'
+    prompts = {
+        'point_coords': np.array([[531, 230], [45, 321], [226, 360], [194, 313]]),
+        'point_labels': np.array([1] * len(points)),
+    }
+
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    seg.prompt = frame
-    seg.get_mask_by_box_prompt(bboxes)
-    mask, unique_mask = seg.convert_mask_to_color()
-    seg.clear_memory()
+    seg = Segmenter()
+    seg.set_image(frame)
+
+    maskss = []
+    for point in points:
+        prompts = {
+            'point_coords': np.array([point]),
+            'point_labels': np.array([1]),
+        }
+        masks, scores, logits = seg.predict(prompts, mode)
+        maskss.append(masks[np.argmax(scores)])
+    mask, unique_mask = merge_masks(maskss)
+
     masks = []
     images = []
     traker = TrackerCore()
