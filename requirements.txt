@@ -55,7 +55,6 @@ python-dateutil==2.9.0.post0
 python-multipart==0.0.20
 python-utils==3.9.1
 pytz==2025.2
-pywin32==310
 pyyaml==6.0.2
 requests==2.32.3
 rich==14.0.0
@@ -73,8 +72,8 @@ starlette==0.46.1
 sympy==1.13.1
 thinplate @ git+https://github.com/cheind/py-thin-plate-spline@f6995795397118b7d0ac01aecd3f39ffbfad9dee
 tomlkit==0.13.2
-torch==2.6.0+cu124
-torchvision==0.21.0+cu124
+torch==2.6.0
+torchvision==0.21.0
 tqdm==4.67.1
 typer==0.15.2
 typing-extensions==4.13.2

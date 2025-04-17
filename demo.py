@@ -29,7 +29,8 @@ def extract_all_frames(video_input):
         "fps": fps,
         "count_frames": count_frames,
     }
-    return frames[0], frames, video_state
+    video_info = f'FPS: {video_state["fps"]} , Кадров: {video_state["count_frames"]}'
+    return frames[0], frames, video_state, video_info
 
 
 # --- Ручная разметка точками (первый кадр) ---
@@ -43,34 +44,40 @@ def on_image_click(image, evt: gr.SelectData, annotations_state):
     for ann in annotations_state["point"]:
         x_p, y_p = ann
         draw.ellipse((x_p - 5, y_p - 5, x_p + 5, y_p + 5), fill="blue")
-    return img, annotations_state, f"Точка добавлена: ({x}, {y})"
+    mask_info = f'Выбрано объектов: {len(annotations_state["point"])}, Координаты: {annotations_state["point"]}'
+    return img, annotations_state, mask_info
 
 
 # --- Разметка всех кадров ---
 def tracking(frames: np.ndarray, video_state: dict) -> list[np.ndarray]:
     tracker.sam_controller.reset_image()
     masks = tracker.tracking(frames, video_state["mask"])
-    video_state["annotations_masks"] = masks
+    video_state["annotation_masks"] = masks
     video_state["annotation_images"] = [
         overlay_davis(frame, mask) for frame, mask in zip(frames, masks)
     ]
     tracker.tracker.clear_memory()
-    return video_state, video_state["annotation_images"]
+    annotation_info = f'Аннотированных кадров: {len(video_state["annotation_images"])}'
+    return video_state, video_state["annotation_images"], annotation_info
 
 
 # --- Аннотация ---
 def annotations(
     frame: np.ndarray, annotations_state: dict, video_state: dict
 ) -> list[np.ndarray]:
+    if len(annotations_state["point"]) == 0:
+        mask_info = 'Поставьте точки на объекты'
+        return frame, video_state, mask_info
     prompts = {
         'mode': 'point',
         'point_coords': annotations_state["point"],
         'point_labels': [1] * len(annotations_state["point"]),
     }
+    tracker.tracker.clear_memory()
     mask = tracker.select_object(prompts)
     image = overlay_davis(frame, mask)
     video_state["mask"] = mask
-    return image, video_state
+    return image, video_state, mask_info
 
 
 segmenter_controller = SegmenterController()
@@ -82,54 +89,65 @@ with gr.Blocks() as demo:
 
     # Состояния
     frames = gr.State([])
+    annotations_state = gr.State({"frame_id": 0, "point": []})
     video_state = gr.State(
         {
             "fps": 30,
             "count_frames": 0,
             "mask": None,
-            "annotations_masks": [],
+            "annotation_masks": [],
             "annotation_images": [],
         }
     )
-    annotations_state = gr.State({"frame_id": 0, "point": []})
 
-    gr.Markdown("# Разметка видео: точки + боксы")
+    gr.Markdown("# Трекинг объектов на видео")
 
     with gr.Row():
         video_input = gr.Video(label="Загрузите видео")
-        output_text = gr.Textbox(label="Результат")
+
+        with gr.Column():
+            first_frame = gr.Image(label="Кадр для выбора объектов", interactive=True)
+            with gr.Row():
+                annotations_btn = gr.Button("Получить маску")
 
     with gr.Row():
-        annotations_btn = gr.Button("Аннотация")
-        tracking_btn = gr.Button("Трекинг")
+        video_info = gr.Textbox(label="Информация о видео")
+        mask_info = gr.Textbox(label="Информация разметке")
 
     with gr.Row():
-        first_frame = gr.Image(label="Первый кадр (ручная разметка)", interactive=True)
-        annotated_gallery = gr.Gallery(label="Все кадры с разметкой", columns=2)
+        with gr.Row():
+            annotation_info = gr.Textbox(label="Информация о трекинге")
+            with gr.Column():
+                tracking_btn = gr.Button("Трекинг")
+        with gr.Column():
+            annotated_gallery = gr.Gallery(label="Все кадры с разметкой", columns=3)
 
     video_input.change(
         extract_all_frames,
         inputs=video_input,
-        outputs=[first_frame, frames, video_state],
+        outputs=[first_frame, frames, video_state, video_info],
     )
 
     # Обработка кликов
     first_frame.select(
         on_image_click,
         inputs=[first_frame, annotations_state],
-        outputs=[first_frame, annotations_state, output_text],
+        outputs=[first_frame, annotations_state, mask_info],
     )
 
     annotations_btn.click(
         annotations,
         inputs=[first_frame, annotations_state, video_state],
-        outputs=[first_frame, video_state],
+        outputs=[first_frame, video_state, mask_info],
     )
 
     tracking_btn.click(
         tracking,
         inputs=[frames, video_state],
-        outputs=[video_state, annotated_gallery],
+        outputs=[video_state, annotated_gallery, annotation_info],
     )
 
-demo.launch(debug=True, server_port=8080)
+demo.launch(
+    debug=True,
+    share=True,
+)

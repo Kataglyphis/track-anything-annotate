@@ -54,7 +54,7 @@ class InteractVideo:
                     # Обновляем размер кадра для первого кадра
                     if frame_index == 0:
                         self.frame_size = new_size
-            self.frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+            self.frames.append(frame)
             frame_index += 1
             bar.update(frame_index)
         bar.finish()
@@ -133,7 +133,7 @@ class InteractVideo:
         )
         cv2.putText(
             self.current_frame,
-            "Enter/s - save  a - back  d - skip w - void save",
+            "Enter/s - save frame(start keyframe) a - back  d - next w - start empty frame(gap) q - quit",
             (10, 40),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
