@@ -20,6 +20,8 @@ def extract_all_frames(video_input):
             ret, frame = cap.read()
             if not ret:
                 break
+            if len(frames) == 100:
+                break
             frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
     except (OSError, TypeError, ValueError, KeyError, SyntaxError) as e:
         print("read_frame_source:{} error. {}\n".format(video_path, str(e)))
@@ -29,7 +31,7 @@ def extract_all_frames(video_input):
         "fps": fps,
         "count_frames": count_frames,
     }
-    video_info = f'FPS: {video_state["fps"]} , Кадров: {video_state["count_frames"]}'
+    video_info = f'FPS: {video_state["fps"]} , Кадров: {video_state["count_frames"]}, Будет обработано: {len(frames)}'
     return frames[0], frames, video_state, video_info
 
 
@@ -50,7 +52,6 @@ def on_image_click(image, evt: gr.SelectData, annotations_state):
 
 # --- Разметка всех кадров ---
 def tracking(frames: np.ndarray, video_state: dict) -> list[np.ndarray]:
-    tracker.sam_controller.reset_image()
     masks = tracker.tracking(frames, video_state["mask"])
     video_state["annotation_masks"] = masks
     video_state["annotation_images"] = [
@@ -63,7 +64,7 @@ def tracking(frames: np.ndarray, video_state: dict) -> list[np.ndarray]:
 
 # --- Аннотация ---
 def annotations(
-    frame: np.ndarray, annotations_state: dict, video_state: dict
+    frame: np.ndarray, annotations_state: dict, video_state: dict, mask_info
 ) -> list[np.ndarray]:
     if len(annotations_state["point"]) == 0:
         mask_info = 'Поставьте точки на объекты'
@@ -73,8 +74,8 @@ def annotations(
         'point_coords': annotations_state["point"],
         'point_labels': [1] * len(annotations_state["point"]),
     }
-    tracker.tracker.clear_memory()
     mask = tracker.select_object(prompts)
+    tracker.sam_controller.reset_image()
     image = overlay_davis(frame, mask)
     video_state["mask"] = mask
     return image, video_state, mask_info
@@ -137,7 +138,7 @@ with gr.Blocks() as demo:
 
     annotations_btn.click(
         annotations,
-        inputs=[first_frame, annotations_state, video_state],
+        inputs=[first_frame, annotations_state, video_state, mask_info],
         outputs=[first_frame, video_state, mask_info],
     )
 
