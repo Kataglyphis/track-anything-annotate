@@ -64,7 +64,7 @@ class InteractVideo:
         """Собирает ключевые точки с поддержкой навигации"""
         cv2.namedWindow("Frame")
         cv2.setMouseCallback("Frame", self.mouse_callback)
-
+        mode = ''
         while self.current_frame_idx < len(self.frames):
             frame = self.frames[self.current_frame_idx]
             is_keyframe = self.current_frame_idx % self.keyframe_interval == 0
@@ -73,7 +73,7 @@ class InteractVideo:
                 self.current_points = self.keypoints.get(
                     self.current_frame_idx, []
                 ).copy()
-                self.show_frame_with_controls()
+                self.show_frame_with_controls(mode)
 
                 while True:
                     key = cv2.waitKey(100)
@@ -85,11 +85,13 @@ class InteractVideo:
                         )
                         self.history.append(self.current_frame_idx)
                         self.current_frame_idx += 1
+                        mode = 'Saver'
                         break
                     elif key == ord('w'):
                         self.keypoints[str(self.current_frame_idx)] = []
                         self.history.append(self.current_frame_idx)
                         self.current_frame_idx += 1
+                        mode = 'Empty'
                         break
                     # Пропуск кадра
                     elif key == ord('d'):
@@ -115,30 +117,39 @@ class InteractVideo:
 
         cv2.destroyAllWindows()
 
-    def show_frame_with_controls(self):
+    def show_frame_with_controls(self, mode):
         """Показывает кадр с элементами управления"""
         self.current_frame = self.frames[self.current_frame_idx].copy()
         h, w = self.current_frame.shape[:2]
 
         # Панель управления
-        cv2.rectangle(self.current_frame, (0, 0), (w, 40), (0, 0, 0), -1)
+        cv2.rectangle(self.current_frame, (0, 0), (w, 43), (0, 0, 0), -1)
         cv2.putText(
             self.current_frame,
             f"Frame {self.current_frame_idx} from {len(self.frames)}",
-            (10, 30),
+            (10, 20),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
+            0.6,
             (255, 255, 255),
             2,
         )
         cv2.putText(
             self.current_frame,
             "Enter/s - save frame(start keyframe) a - back  d - next w - start empty frame(gap) q - quit",
-            (10, 40),
+            (10, 38),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
             (255, 255, 255),
             1,
+        )
+        cv2.putText(
+            self.current_frame,
+            f"Current mode: {mode}",
+            (300, 20),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (255, 255, 255),
+            2,
         )
 
         # Сетка
@@ -179,7 +190,7 @@ if __name__ == '__main__':
     controller.extract_frames()  # Сначала извлекаем все кадры
     controller.collect_keypoints()
     results = controller.get_results()
-    print(f'Всего кадров: {len(results['frames'])}')
+    print(f'Всего кадров: {len(results["frames"])}')
     for frame_idx, points in results['keypoints'].items():
         if points:
             print(f"Кадр {frame_idx}: {len(points)} точек")
