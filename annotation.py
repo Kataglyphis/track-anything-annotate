@@ -1,3 +1,4 @@
+import numpy as np
 from sam_controller import SegmenterController
 from tools.data_exporter import get_type_save_annotation
 from tracker import Tracker
@@ -5,7 +6,27 @@ from interactive_video import InteractVideo
 from tracker_core_xmem2 import TrackerCore
 
 
-def main(video_path: str, class_names: list[str]):
+def create_dataset(
+    images: list[np.ndarray],
+    masks: list[np.ndarray],
+    names_class: list[str],
+    type_save: str = 'yolo',
+):
+    assert len(masks) == len(images)
+
+    send_images = []
+    send_masks = []
+    for i in range(len(masks)):
+        if i % 2 == 0:
+            send_images.append(images[i])
+            send_masks.append(masks[i])
+
+    saver = get_type_save_annotation(send_images, send_masks, names_class, type_save)
+    saver.start_creation()
+    saver.create_archive()
+
+
+def main(video_path: str, names_class: list[str]):
     video = InteractVideo(video_path)
     video.extract_frames()
     video.collect_keypoints()
@@ -38,6 +59,8 @@ def main(video_path: str, class_names: list[str]):
                 }
             )
 
+    print(f'{len(annotations)} Колличество сегментов')
+    
     masks = []
     images_ann = []
     for ann in annotations:
@@ -49,11 +72,7 @@ def main(video_path: str, class_names: list[str]):
             masks += mask
             images_ann += images
 
-    assert len(masks) == len(images_ann)
-
-    saver = get_type_save_annotation(images_ann, masks, class_names)
-    saver.start_creation()
-    saver.create_archive()
+    create_dataset(images_ann, masks, names_class)
 
 
 if __name__ == '__main__':
