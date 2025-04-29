@@ -186,7 +186,7 @@ class InteractVideo:
 
 
 if __name__ == '__main__':
-    controller = InteractVideo('video-test/VID_20241218_134328.mp4')
+    controller = InteractVideo('video-test/video.mp4')
     controller.extract_frames()  # Сначала извлекаем все кадры
     controller.collect_keypoints()
     results = controller.get_results()

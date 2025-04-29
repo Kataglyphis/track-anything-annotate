@@ -28,7 +28,7 @@ def draw_labels_on_image(path, images_path, labels_path, file_name) -> None:
 
             font = ImageFont.truetype("arial.ttf", 15)
             draw = ImageDraw.Draw(image)
-            draw.text((x, y), class_id, font=font, fill=(255, 0, 0))
+            # draw.text((x + 50, y + 50), class_id, font=font, fill=(255, 0, 0))
             draw.rectangle(
                 (
                     (x - width_factor // 2),
@@ -36,8 +36,8 @@ def draw_labels_on_image(path, images_path, labels_path, file_name) -> None:
                     (x + width_factor // 2),
                     (y + height_factor // 2),
                 ),
-                outline=(255, 255, 255),
-                width=2,
+                outline=(0, 255, 0),
+                width=3,
             )
 
     image.save(f'{path}/t{file_name}.jpg', quality=95)
