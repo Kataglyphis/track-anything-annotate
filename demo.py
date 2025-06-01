@@ -6,6 +6,7 @@ from XMem2.inference.interact.interactive_utils import overlay_davis
 from sam_controller import SegmenterController
 from tracker import Tracker
 from tracker_core_xmem2 import TrackerCore
+from config import DEVICE
 
 
 # --- Извлечение всех кадров ---
@@ -20,7 +21,7 @@ def extract_all_frames(video_input):
             ret, frame = cap.read()
             if not ret:
                 break
-            if len(frames) == 100:
+            if len(frames) == 100 and DEVICE == "cpu":
                 break
             frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
     except (OSError, TypeError, ValueError, KeyError, SyntaxError) as e:
