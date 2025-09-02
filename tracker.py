@@ -89,12 +89,12 @@ class Tracker:
 
 
 if __name__ == '__main__':
-    path = 'video-test/VID_20241218_134328.mp4'
+    path = 'video-test/video.mp4'
     key_interval = 3
-    controller = InteractVideo(path, key_interval)
-    controller.extract_frames()
-    controller.collect_keypoints()
-    results = controller.get_results()
+    video = InteractVideo(path, key_interval)
+    video.extract_frames()
+    video.collect_keypoints()
+    results = video.get_results()
 
     segmenter_controller = SegmenterController()
     tracker_core = TrackerCore()
@@ -102,73 +102,100 @@ if __name__ == '__main__':
 
     frames = results['frames']
 
+    prompts = {
+        'mode': 'point',
+        'point_coords': [[531, 230], [45, 321], [226, 360], [194, 313]],
+        'point_labels': [1, 1, 1, 1],
+    }
+
     # prompts = {
     #     'mode': 'point',
-    #     'point_coords': [[531, 230], [45, 321], [226, 360], [194, 313]],
-    #     'point_labels': [1, 1, 1, 1],
+    #     'point_coords': results['keypoints'][list(results['keypoints'].keys())[0]],
+    #     'point_labels': [1, 1],
     # }
 
-    frames_idx = list(map(int, results['keypoints'].keys()))
+    tracker.sam_controller.load_image(frames[0])
+    mask = tracker.select_object(prompts)
+    image_m = overlay_davis(frames[0], mask)
+    cv2.imshow('image', image_m)
+    cv2.imshow('imageza;epa', frames[63])
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    masks = tracker.tracking(frames, mask)
 
-    result = []
-    for i in range(len(frames_idx) - 1):
-        current_frame = frames_idx[i]
-        current_coords = results['keypoints'][str(current_frame)]
+    # result = []
+    # print(len(results['keypoints']))
+    # if len(results['keypoints']) == 1:
+    #     current_frame = list(results['keypoints'].keys())[0]
+    #     next_frame = len(results["frames"])
+    #     current_coords = results['keypoints'][current_frame]
 
-        next_frame = frames_idx[i + 1]
-        print(current_frame, next_frame)
-        if current_coords:
-            tracker.sam_controller.load_image(frames[current_frame])
-            prompts = {
-                'mode': 'point',
-                'point_coords': current_coords,
-                'point_labels': [1] * len(current_coords),
-            }
-            mask = tracker.select_object(prompts)
-            tracker.sam_controller.reset_image()
-            result.append(
-                {
-                    "gap": [current_frame, next_frame],
-                    "frame": current_frame,
-                    "mask": mask,
-                }
-            )
-        else:
-            result.append(
-                {
-                    "gap": [current_frame, next_frame],
-                    "frame": current_frame,
-                    "mask": None,
-                }
-            )
+    #     if current_coords:
+    #         tracker.sam_controller.load_image(results['frames'][int(current_frame)])
+    #         prompts = {
+    #             'mode': 'point',
+    #             'point_coords': current_coords,
+    #             'point_labels': [1] * len(current_coords),
+    #         }
+    #         mask = tracker.select_object(prompts)
+    #         tracker.sam_controller.reset_image()
+    #         result.append(
+    #             {
+    #                 'gap': [current_frame, next_frame],
+    #                 'frame': current_frame,
+    #                 'mask': mask,
+    #             }
+    #         )
 
-    # masks = tracking.tracking(frames, mask)
+    # for i in range(len(results['keypoints']) - 1):
+    #     current_frame = list(results['keypoints'].keys())[i]
+    #     next_frame = list(results['keypoints'].keys())[i + 1]
+    #     current_coords = results['keypoints'][current_frame]
 
-    masks = []
-    for res in result:
-        current_frame, next_frame = res['gap']
-        if res['mask'] is not None:
-            print(current_frame, next_frame)
-            mask = tracker.tracking(frames[current_frame:next_frame], res['mask'])
-            tracker.tracker.clear_memory()
-            masks += mask
-        else:
-            print(current_frame, next_frame)
-            m = []
-            for _ in range(current_frame, next_frame):
-                height, width, _ = frames[current_frame].shape
-                binary_mask = np.zeros((height, width), dtype=np.uint8)
-                binary_mask[:, :] = 1
-                m.append(binary_mask)
-            masks += m
+    #     if current_coords:
+    #         tracker.sam_controller.load_image(results['frames'][int(current_frame)])
+    #         prompts = {
+    #             'mode': 'point',
+    #             'point_coords': current_coords,
+    #             'point_labels': [1] * len(current_coords),
+    #         }
+    #         mask = tracker.select_object(prompts)
+    #         tracker.sam_controller.reset_image()
+    #         result.append(
+    #             {
+    #                 'gap': [current_frame, next_frame],
+    #                 'frame': current_frame,
+    #                 'mask': mask,
+    #             }
+    #         )
 
-    filename = 'output_video_from_file_mem2_ved_pot.mp4'
+    # print(len(result))
+    # masks = []
+    # for res in result:
+    #     current_frame, next_frame = res['gap']
+    #     if res['mask'] is not None:
+    #         print(current_frame, next_frame)
+    #         images = results['frames'][int(current_frame) : int(next_frame)]
+    #         mask = tracker.tracking(images, res['mask'])
+    #         tracker.tracker.clear_memory()
+    #         masks += mask
+    # else:
+    #     print(current_frame, next_frame)
+    #     m = []
+    #     for _ in range(current_frame, next_frame):
+    #         height, width, _ = frames[current_frame].shape
+    #         binary_mask = np.zeros((height, width), dtype=np.uint8)
+    #         binary_mask[:, :] = 1
+    #         m.append(binary_mask)
+    #     masks += m
+
+    filename = 'helmet_border.mp4'
     output = cv2.VideoWriter(
-        filename, cv2.VideoWriter_fourcc(*'XVID'), controller.fps, controller.frame_size
+        filename, cv2.VideoWriter_fourcc(*'XVID'), video.fps, video.frame_size
     )
     for frame, mask in zip(frames, masks):
-        # f = painter_borders(frame, mask)
-        f = overlay_davis(frame, mask)
+        f = painter_borders(frame, mask)
+        #f = overlay_davis(frame, mask)
         output.write(f)
     # Освобождаем ресурсы
     output.release()

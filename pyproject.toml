@@ -16,8 +16,11 @@ dependencies = [
     "setuptools>=78.1.0",
     "thinplate",
     "tqdm>=4.67.1",
-    # "segment-anything-fast"
 ]
+
+# dependecies for sam2 if have problem with install https://github.com/facebookresearch/sam2.git
+# "setuptools>=62.3.0,<75.9",  
+# "torch>=2.6.0",
 
 [tool.ruff]
 exclude = ["XMem", "XMem2"]
@@ -50,8 +53,10 @@ torchvision = [
   { index = "pytorch-cpu", extra = "cpu" },
   { index = "pytorch-cu124", extra = "cu124" },
 ]
-sam-2 = { git = "https://github.com/lnikioffic/sam2.git" }
+
+# sam-2 = { git = "https://github.com/lnikioffic/sam2.git" }
 thinplate = { git = "https://github.com/cheind/py-thin-plate-spline" }
+sam-2 = { git = "https://github.com/facebookresearch/sam2.git" }
 
 [[tool.uv.index]]
 name = "pytorch-cpu"

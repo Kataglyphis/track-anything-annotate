@@ -57,7 +57,7 @@ def get_filtered_bboxes(img, min_area_ratio):
 
 
 def get_filtered_bboxes_xywh(img, min_area_ratio):
-    contours, hierarchy = cv2.findContours(img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     bboxes = []
     # Область изображения.
     im_area = img.shape[0] * img.shape[1]
@@ -88,5 +88,5 @@ def get_filtered_bboxes_xywh(img, min_area_ratio):
 def getting_coordinates(image_mask):
     gray_img = cv2.cvtColor(image_mask, cv2.COLOR_BGR2GRAY)
     thresh_stags = threshold(gray_img, thresh=110, mode='direct')
-    bboxes = get_filtered_bboxes_xywh(thresh_stags, min_area_ratio=0.005)
+    bboxes = get_filtered_bboxes_xywh(thresh_stags, min_area_ratio=0.001)
     return bboxes
