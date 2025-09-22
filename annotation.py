@@ -22,7 +22,7 @@ def create_dataset(
             send_masks.append(masks[i])
 
     saver = get_type_save_annotation(send_images, send_masks, names_class, type_save)
-    saver.start_creation()
+    saver.create_dataset()
     saver.create_archive()
 
 
