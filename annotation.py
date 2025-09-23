@@ -23,7 +23,7 @@ def create_dataset(
 
     saver = get_type_save_annotation(send_images, send_masks, names_class, type_save)
     saver.create_dataset()
-    saver.create_archive()
+    print(saver.create_archive())
 
 
 def main(video_path: str, names_class: list[str]):
@@ -95,7 +95,7 @@ def main(video_path: str, names_class: list[str]):
             masks += mask
             images_ann += images
 
-    create_dataset(images_ann, masks, names_class)
+    create_dataset(images_ann, masks, names_class, 'coco')
 
 
 if __name__ == '__main__':

@@ -2,6 +2,7 @@ import cv2
 import uuid
 import shutil
 import numpy as np
+import json
 from pathlib import Path
 from typing import Protocol, Type
 
@@ -41,6 +42,7 @@ def get_type_save_annotation(
     '''Factory'''
     types_saves: dict[str, Type[TypeSave]] = {
         'yolo': YoloDatasetSaver,
+        'coco': CocoDatasetSevar,
     }
 
     return types_saves[type_save](images, masks, names_class)
@@ -55,6 +57,97 @@ def generate_class_folder_name(names_class: list[str]):
 
     folder_name = f'dt-{base_name}-{uuid.uuid1()}'
     return folder_name
+
+
+class CocoDatasetSevar:
+    def __init__(
+        self, images: list[np.ndarray], masks: list[np.ndarray], class_names: list[str]
+    ):
+        self.images = images
+        self.masks = masks
+        self.class_to_idx = {}
+
+        for i, name in enumerate(class_names):
+            self.class_to_idx[name] = i
+
+        dataset_name = generate_class_folder_name(class_names)
+        dataset_path = Path(SAVE_FOLDER / dataset_name)
+        dataset_path.mkdir()
+
+        self.dataset_dir = SAVE_FOLDER / dataset_name
+
+        self.images_dir = self.dataset_dir / 'images'
+        images_dir = Path(self.images_dir)
+        images_dir.mkdir()
+
+    def create_dataset(self):
+        self._create_coco_annotations(self.images, self.masks)
+
+    def create_archive(self):
+        shutil.make_archive(self.dataset_dir, 'zip', self.dataset_dir)
+        shutil.rmtree(self.dataset_dir)
+        return f'{self.dataset_dir}.zip'
+
+    def _create_coco_annotations(self, images: list, masks: list):
+        coco_data = {
+            # 'info': {
+            #     'description': 'Custom COCO Dataset',
+            #     'version': '1.0',
+            #     'year': 2024,
+            #     'contributor': '',
+            #     'url': ''
+            # },
+            # 'licenses': [{'id': 1, 'name': 'Academic', 'url': ''}],
+            'categories': self._create_categories(),
+            'images': [],
+            'annotations': [],
+        }
+
+        annotation_id = 1
+        for img_id, (image, mask) in enumerate(zip(images, masks)):
+            img_filename = f'{img_id:012d}.jpg'
+            img_path = self.images_dir / img_filename
+            cv2.imwrite(str(img_path), image)
+
+            coco_data['images'].append(
+                {
+                    'id': img_id,
+                    'file_name': img_filename,
+                    'width': image.shape[1],
+                    'height': image.shape[0],
+                }
+            )
+
+            # Добавляем аннотации (bounding boxes и сегментации)
+            annotations = self._create_annotations(mask, img_id, annotation_id)
+            coco_data['annotations'].extend(annotations)
+            annotation_id += len(annotations)
+
+        # Сохраняем JSON аннотации
+        annotations_path = self.dataset_dir / 'annotations.json'
+        with open(annotations_path, 'w') as f:
+            json.dump(coco_data, f, indent=2)
+
+    def _create_categories(self):
+        return [
+            {'id': class_id, 'name': class_name}
+            for class_name, class_id in enumerate(self.class_to_idx)
+        ]
+
+    def _create_annotations(
+        self, mask_unique: np.ndarray, image_id: int, start_id: int
+    ):
+        annotations = []
+        coordinates = []
+        for mask in mask_map(mask_unique):
+            bbox = getting_coordinates(mask)
+            coordinates += bbox
+        for box in coordinates:
+            x, y = box[0], box[1]
+            w, h = box[2], box[3]
+            data_images = {'image_id': image_id, 'category_id': 0, 'bbox': [x, y, w, h]}
+            annotations.append(data_images)
+        return annotations
 
 
 class YoloDatasetSaver:
@@ -111,7 +204,6 @@ class YoloDatasetSaver:
         file_path: str,
         name_class_idx: int,
     ):
-
         img_height = images.shape[0]
         img_width = images.shape[1]
         with open(file_path, 'w') as file:
