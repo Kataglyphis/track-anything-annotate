@@ -42,24 +42,24 @@ def get_type_save_annotation(
     '''Factory'''
     types_saves: dict[str, Type[TypeSave]] = {
         'yolo': YoloDatasetSaver,
-        'coco': CocoDatasetSevar,
+        'coco': CocoDatasetSaver,
     }
+    SaverClass = types_saves.get(type_save.lower())
+    if SaverClass is None:
+        raise ValueError(f"Unknown dataset type: {type_save}")
 
-    return types_saves[type_save](images, masks, names_class)
+    return SaverClass(images, masks, names_class)
 
 
 def generate_class_folder_name(names_class: list[str]):
-    base_name = (
-        ''.join(names_class)[:10]
-        if len(''.join(names_class)) > 15
-        else ''.join(names_class)
-    )
+    combined = ''.join(names_class)
+    base_name = combined[:10] if len(combined) > 10 else combined
 
-    folder_name = f'dt-{base_name}-{uuid.uuid1()}'
+    folder_name = f'dt-{base_name}-{uuid.uuid4()}'
     return folder_name
 
 
-class CocoDatasetSevar:
+class CocoDatasetSaver:
     def __init__(
         self, images: list[np.ndarray], masks: list[np.ndarray], class_names: list[str]
     ):
@@ -72,20 +72,19 @@ class CocoDatasetSevar:
 
         dataset_name = generate_class_folder_name(class_names)
         dataset_path = Path(SAVE_FOLDER / dataset_name)
-        dataset_path.mkdir()
+        dataset_path.mkdir(parents=True, exist_ok=True)
 
         self.dataset_dir = SAVE_FOLDER / dataset_name
 
         self.images_dir = self.dataset_dir / 'images'
-        images_dir = Path(self.images_dir)
-        images_dir.mkdir()
+        self.images_dir.mkdir(parents=True, exist_ok=True)
 
     def create_dataset(self):
         self._create_coco_annotations(self.images, self.masks)
 
-    def create_archive(self):
-        shutil.make_archive(self.dataset_dir, 'zip', self.dataset_dir)
-        shutil.rmtree(self.dataset_dir)
+    def create_archive(self) -> str:
+        shutil.make_archive(str(self.dataset_dir), 'zip', str(self.dataset_dir))
+        shutil.rmtree(str(self.dataset_dir))
         return f'{self.dataset_dir}.zip'
 
     def _create_coco_annotations(self, images: list, masks: list):
@@ -125,13 +124,13 @@ class CocoDatasetSevar:
 
         # Сохраняем JSON аннотации
         annotations_path = self.dataset_dir / 'annotations.json'
-        with open(annotations_path, 'w') as f:
+        with open(annotations_path, 'w', encoding='utf-8') as f:
             json.dump(coco_data, f, indent=2)
 
     def _create_categories(self):
         return [
             {'id': class_id, 'name': class_name}
-            for class_name, class_id in enumerate(self.class_to_idx)
+            for class_name, class_id in self.class_to_idx.items()
         ]
 
     def _create_annotations(
@@ -164,17 +163,15 @@ class YoloDatasetSaver:
 
         dataset_name = generate_class_folder_name(class_names)
         dataset_path = Path(SAVE_FOLDER / dataset_name)
-        dataset_path.mkdir()
+        dataset_path.mkdir(parents=True, exist_ok=True)
 
         self.dataset_dir = SAVE_FOLDER / dataset_name
 
         self.images_dir = self.dataset_dir / 'images'
-        images_dir = Path(self.images_dir)
-        images_dir.mkdir()
+        self.images_dir.mkdir(parents=True, exist_ok=True)
 
         self.labels_dir = self.dataset_dir / 'labels'
-        labels_dir = Path(self.labels_dir)
-        labels_dir.mkdir()
+        self.labels_dir.mkdir(parents=True, exist_ok=True)
 
     def create_dataset(self):
         for idx, (image, mask) in enumerate(zip(self.images, self.masks)):
@@ -188,12 +185,12 @@ class YoloDatasetSaver:
         self._save_class_names(self.dataset_dir / 'classes.txt')
 
     def create_archive(self) -> str:
-        shutil.make_archive(self.dataset_dir, 'zip', self.dataset_dir)
-        shutil.rmtree(self.dataset_dir)
+        shutil.make_archive(str(self.dataset_dir), 'zip', str(self.dataset_dir))
+        shutil.rmtree(str(self.dataset_dir))
         return f'{self.dataset_dir}.zip'
 
     def _save_class_names(self, file_path: str):
-        with open(file_path, 'w') as file:
+        with open(file_path, 'w', encoding='utf-8') as file:
             for class_name, class_id in self.class_to_idx.items():
                 file.write(f'{class_id} {class_name}\n')
 
@@ -206,7 +203,7 @@ class YoloDatasetSaver:
     ):
         img_height = images.shape[0]
         img_width = images.shape[1]
-        with open(file_path, 'w') as file:
+        with open(file_path, 'w', encoding='utf-8') as file:
             coordinates = []
             for mask in mask_map(mask_unique):
                 bbox = getting_coordinates(mask)

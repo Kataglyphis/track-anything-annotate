@@ -1,3 +1,4 @@
+from typing import Any
 import numpy as np
 from sam_controller import SegmenterController
 from tools.data_exporter import get_type_save_annotation
@@ -26,6 +27,92 @@ def create_dataset(
     print(saver.create_archive())
 
 
+def process_keypoint(
+    tracker: Tracker,
+    frame_idx: int,
+    next_frame_idx: int,
+    coords: list[Any],
+    frames: list[np.ndarray],
+    annotations: list[dict[str, Any]],
+) -> None:
+    if not coords:
+        return
+    try:
+        tracker.sam_controller.load_image(frames[frame_idx])
+        prompts = {
+            'mode': 'point',
+            'point_coords': coords,
+            'point_labels': [1] * len(coords),
+        }
+        mask = tracker.select_object(prompts)
+        tracker.sam_controller.reset_image()
+        annotations.append(
+            {
+                'gap': [frame_idx, next_frame_idx],
+                'frame': frame_idx,
+                'mask': mask,
+            }
+        )
+    except Exception as e:
+        print(f"Ошибка при обработке ключевой точки (frame {frame_idx}): {e}")
+
+
+def process_single_keypoint(
+    tracker: Tracker, results: dict[str, Any], annotations: list[dict[str, Any]]
+) -> None:
+    try:
+        current_frame = list(results['keypoints'].keys())[0]
+        next_frame = len(results["frames"])
+        current_coords = results['keypoints'][current_frame]
+        process_keypoint(
+            tracker,
+            current_frame,
+            next_frame,
+            current_coords,
+            results['frames'],
+            annotations,
+        )
+    except Exception as e:
+        print(f"Ошибка в process_single_keypoint: {e}")
+
+
+def process_multiple_keypoints(
+    tracker: Tracker, results: dict[str, Any], annotations: list[dict[str, Any]]
+) -> None:
+    try:
+        keypoints_keys = list(results['keypoints'].keys())
+        for i in range(len(keypoints_keys) - 1):
+            current_frame = keypoints_keys[i]
+            next_frame = keypoints_keys[i + 1]
+            current_coords = results['keypoints'][current_frame]
+            process_keypoint(
+                tracker,
+                current_frame,
+                next_frame,
+                current_coords,
+                results['frames'],
+                annotations,
+            )
+    except Exception as e:
+        print(f"Ошибка в process_multiple_keypoints: {e}")
+
+
+def get_masks_and_images(
+    tracker: Tracker, annotations: list[dict], results: dict
+) -> tuple[list[np.ndarray], list[np.ndarray]]:
+    masks: list[np.ndarray] = []
+    images_ann: list[np.ndarray] = []
+    for ann in annotations:
+        current_frame, next_frame = ann['gap']
+        if ann['mask'] is not None:
+            images = results['frames'][int(current_frame) : int(next_frame)]
+            mask = tracker.tracking(images, ann['mask'])
+            tracker.tracker.clear_memory()
+            masks += mask
+            images_ann += images
+    return images_ann, masks
+
+
 def main(video_path: str, names_class: list[str]):
     video = InteractVideo(video_path)
     video.extract_frames()
@@ -36,65 +123,16 @@ def main(video_path: str, names_class: list[str]):
     tracker_core = TrackerCore()
     tracker = Tracker(segmenter_controller, tracker_core)
 
-    annotations = []
+    annotations: list[dict] = []
     print(len(results['keypoints']))
     if len(results['keypoints']) == 1:
-        current_frame = list(results['keypoints'].keys())[0]
-        next_frame = len(results["frames"])
-        current_coords = results['keypoints'][current_frame]
-
-        if current_coords:
-            tracker.sam_controller.load_image(results['frames'][int(current_frame)])
-            prompts = {
-                'mode': 'point',
-                'point_coords': current_coords,
-                'point_labels': [1] * len(current_coords),
-            }
-            mask = tracker.select_object(prompts)
-            tracker.sam_controller.reset_image()
-            annotations.append(
-                {
-                    'gap': [current_frame, next_frame],
-                    'frame': current_frame,
-                    'mask': mask,
-                }
-            )
-
-    for i in range(len(results['keypoints']) - 1):
-        current_frame = list(results['keypoints'].keys())[i]
-        next_frame = list(results['keypoints'].keys())[i + 1]
-        current_coords = results['keypoints'][current_frame]
-
-        if current_coords:
-            tracker.sam_controller.load_image(results['frames'][int(current_frame)])
-            prompts = {
-                'mode': 'point',
-                'point_coords': current_coords,
-                'point_labels': [1] * len(current_coords),
-            }
-            mask = tracker.select_object(prompts)
-            tracker.sam_controller.reset_image()
-            annotations.append(
-                {
-                    'gap': [current_frame, next_frame],
-                    'frame': current_frame,
-                    'mask': mask,
-                }
-            )
+        process_single_keypoint(tracker, results, annotations)
+    else:
+        process_multiple_keypoints(tracker, results, annotations)
 
     print(f'{len(annotations)} Колличество сегментов')
 
-    masks = []
-    images_ann = []
-    for ann in annotations:
-        current_frame, next_frame = ann['gap']
-        if ann['mask'] is not None:
-            images = results['frames'][int(current_frame) : int(next_frame)]
-            mask = tracker.tracking(images, ann['mask'])
-            tracker.tracker.clear_memory()
-            masks += mask
-            images_ann += images
-
+    images_ann, masks = get_masks_and_images(tracker, annotations, results)
     create_dataset(images_ann, masks, names_class, 'coco')
 
 
