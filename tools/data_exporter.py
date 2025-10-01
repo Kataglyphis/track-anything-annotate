@@ -207,7 +207,7 @@ class YoloDatasetSaver:
             coordinates = []
             for mask in mask_map(mask_unique):
                 bbox = getting_coordinates(mask)
-                coordinates += bbox
+                coordinates.extend(bbox)
 
             for box in coordinates:
                 x, y = box[0], box[1]

@@ -1,4 +1,5 @@
 from typing import Any
+import cv2
 import numpy as np
 from sam_controller import SegmenterController
 from tools.data_exporter import get_type_save_annotation
@@ -32,13 +33,14 @@ def process_keypoint(
     frame_idx: int,
     next_frame_idx: int,
     coords: list[Any],
-    frames: list[np.ndarray],
+    frames_path: list[str],
     annotations: list[dict[str, Any]],
 ) -> None:
     if not coords:
         return
     try:
-        tracker.sam_controller.load_image(frames[frame_idx])
+        frame = cv2.imread(frames_path[frame_idx])
+        tracker.sam_controller.load_image(frame)
         prompts = {
             'mode': 'point',
             'point_coords': coords,
@@ -62,14 +64,14 @@ def process_single_keypoint(
 ) -> None:
     try:
         current_frame = list(results['keypoints'].keys())[0]
-        next_frame = len(results["frames"])
+        next_frame = len(results['frames_path'])
         current_coords = results['keypoints'][current_frame]
         process_keypoint(
             tracker,
             current_frame,
             next_frame,
             current_coords,
-            results['frames'],
+            results['frames_path'],
             annotations,
         )
     except Exception as e:
@@ -84,13 +86,14 @@ def process_multiple_keypoints(
         for i in range(len(keypoints_keys) - 1):
             current_frame = keypoints_keys[i]
             next_frame = keypoints_keys[i + 1]
+            print(next_frame)
             current_coords = results['keypoints'][current_frame]
             process_keypoint(
                 tracker,
                 current_frame,
                 next_frame,
                 current_coords,
-                results['frames'],
+                results['frames_path'],
                 annotations,
             )
     except Exception as e:
@@ -105,11 +108,12 @@ def get_masks_and_images(
     for ann in annotations:
         current_frame, next_frame = ann['gap']
         if ann['mask'] is not None:
-            images = results['frames'][int(current_frame) : int(next_frame)]
+            frame_sources = results['frames_path'][int(current_frame) : int(next_frame)]
+            images = [cv2.imread(f) for f in frame_sources]
             mask = tracker.tracking(images, ann['mask'])
             tracker.tracker.clear_memory()
-            masks += mask
-            images_ann += images
+            masks.extend(mask)
+            images_ann.extend(images)
     return images_ann, masks
 
 
@@ -125,15 +129,16 @@ def main(video_path: str, names_class: list[str]):
 
     annotations: list[dict] = []
     print(len(results['keypoints']))
-    if len(results['keypoints']) == 1:
-        process_single_keypoint(tracker, results, annotations)
-    else:
+    print(results)
+    if len(results['keypoints']) > 1:
         process_multiple_keypoints(tracker, results, annotations)
+    else:
+        process_single_keypoint(tracker, results, annotations)
 
     print(f'{len(annotations)} Колличество сегментов')
 
     images_ann, masks = get_masks_and_images(tracker, annotations, results)
-    create_dataset(images_ann, masks, names_class, 'coco')
+    create_dataset(images_ann, masks, names_class, 'yolo')
 
 
 if __name__ == '__main__':

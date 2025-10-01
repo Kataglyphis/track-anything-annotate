@@ -1,12 +1,16 @@
 import cv2
 import progressbar
+import tempfile
+from pathlib import Path
 
 class InteractVideo:
     def __init__(
         self, video_path: str, keyframe_interval: int = 3, one_frame: bool = False, max_points: int = 10
     ):
         self.video_path = video_path
-        self.frames = []
+        # self.frames = []
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.frames_path: list[str] = []
         self.keypoints: dict[int, list[tuple[int, int]]] = (
             {}
         )  # {frame_index: [(x1,y1), (x2,y2), ...]}
@@ -21,7 +25,6 @@ class InteractVideo:
         max_width: int = 1280,
         max_height: int = 720,
     ):
-        """Извлекает все кадры из видео и сохраняет в self.frames"""
         cap = cv2.VideoCapture(self.video_path)
 
         if not cap.isOpened():
@@ -42,7 +45,6 @@ class InteractVideo:
         print(f'Extracting frames from {self.video_path} into a temporary dir...')
         bar = progressbar.ProgressBar(max_value=frames_to_propagate)
 
-        self.frames = []
         while True:
             ret, frame = cap.read()
             if not ret:
@@ -62,7 +64,10 @@ class InteractVideo:
                     # Обновляем размер кадра для первого кадра
                     if frame_index == 0:
                         self.frame_size = new_size
-            self.frames.append(frame)
+            # self.frames.append(frame)
+            frame_path = Path(self.tmpdir.name) / f"frame_{frame_index:06d}.jpg"
+            cv2.imwrite(str(frame_path), frame)
+            self.frames_path.append(str(frame_path))
             frame_index += 1
             bar.update(frame_index)
         bar.finish()
@@ -75,15 +80,15 @@ class InteractVideo:
 
         self.current_points: list[tuple[int, int]] = []
 
-        while 0 <= self.current_frame_idx < len(self.frames):
-            frame = self.frames[self.current_frame_idx]
+        while 0 <= self.current_frame_idx < len(self.frames_path):
+            frame = cv2.imread(self.frames_path[self.current_frame_idx])
             is_keyframe = self.current_frame_idx % self.keyframe_interval == 0
 
             if is_keyframe:
                 self.current_points = self.keypoints.get(
                     self.current_frame_idx, []
                 ).copy()
-                self.show_frame_with_controls()
+                self.show_frame_with_controls(frame.copy())
 
                 while True:
                     key = cv2.waitKey(100)
@@ -124,16 +129,16 @@ class InteractVideo:
 
         cv2.destroyAllWindows()
 
-    def show_frame_with_controls(self):
+    def show_frame_with_controls(self, frame):
         """Показывает кадр с элементами управления"""
-        self.current_frame = self.frames[self.current_frame_idx].copy()
+        self.current_frame = frame
         h, w = self.current_frame.shape[:2]
 
         # Панель управления
         cv2.rectangle(self.current_frame, (0, 0), (w, 43), (0, 0, 0), -1)
         cv2.putText(
             self.current_frame,
-            f"Frame {self.current_frame_idx} from {len(self.frames)}",
+            f"Frame {self.current_frame_idx} from {len(self.frames_path)}",
             (10, 20),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.6,
@@ -176,7 +181,7 @@ class InteractVideo:
 
     def get_results(self):
         return {
-            'frames': self.frames,
+            'frames_path': self.frames_path,
             'keypoints': self.keypoints,
         }
 
@@ -186,7 +191,7 @@ if __name__ == '__main__':
     controller.extract_frames()  # Сначала извлекаем все кадры
     controller.collect_keypoints()
     results = controller.get_results()
-    print(f'Всего кадров: {len(results["frames"])}')
+    print(f'Всего кадров: {len(results["frames_path"])}')
     for frame_idx, points in results['keypoints'].items():
         if points:
             print(f"Кадр {frame_idx}: {len(points)} точек")

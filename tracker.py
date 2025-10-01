@@ -100,8 +100,9 @@ if __name__ == '__main__':
     tracker_core = TrackerCore()
     tracker = Tracker(segmenter_controller, tracker_core)
 
-    frames = results['frames']
-
+    frame_sources = results['frames_path']
+    frames = [cv2.imread(f) for f in frame_sources]
+    
     prompts = {
         'mode': 'point',
         'point_coords': [[531, 230], [45, 321], [226, 360], [194, 313]],
@@ -195,7 +196,7 @@ if __name__ == '__main__':
     )
     for frame, mask in zip(frames, masks):
         f = painter_borders(frame, mask)
-        #f = overlay_davis(frame, mask)
+        # f = overlay_davis(frame, mask)
         output.write(f)
     # Освобождаем ресурсы
     output.release()
