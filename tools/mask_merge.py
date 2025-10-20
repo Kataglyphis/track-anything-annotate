@@ -22,6 +22,8 @@ def merge_masks(masks, method='max'):
     # Создаем уникальную индексированную маску
     unique_mask = np.zeros((H, W), dtype=np.uint8)
 
+    # binary_mask = np.any(masks > 0, axis=0).astype(np.uint8) * 255
+
     for i in range(N):
         # Создаем цветную маску для текущей области
         color_mask = np.zeros_like(mask_colored)
@@ -47,7 +49,7 @@ def create_mask(mask, random_color=False):
     #         [30 / 255, 144 / 255, 255 / 255, 0.6]
     #     )  # Синий цвет с прозрачностью
 
-    h, w = mask.shape[-2:]  # Получаем высоту и ширину маски
+    # h, w = mask.shape[-2:]  # Получаем высоту и ширину маски
     mask = mask.astype(np.uint8)  # Приводим маску к типу uint8
 
     return mask  # Возвращаем маску в формате (H, W)
