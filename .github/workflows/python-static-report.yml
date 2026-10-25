@@ -1,0 +1,28 @@
+name: Linux x64 · Python static report
+
+on:
+  push:
+    paths:
+      - '**/*.py'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/python-static-report.yml'
+      - 'third_party/ANTfrastructure'
+  pull_request:
+    paths:
+      - '**/*.py'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/python-static-report.yml'
+      - 'third_party/ANTfrastructure'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    uses: Kataglyphis/ANTfrastructure/.github/workflows/python-static.yml@develop
+    with:
+      path: .
+      strict: false
